@@ -5,6 +5,7 @@
     <orderEntry type="jdk" jdkName="Python 3.6.8 virtualenv at D:\Workspace\virtualPython" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="MNIST_autoencode" />
+    <orderEntry type="module" module-name="MNIST_VAE_noeager" />
   </component>
   <component name="TestRunnerService">
     <option name="PROJECT_TEST_RUNNER" value="Unittests" />
