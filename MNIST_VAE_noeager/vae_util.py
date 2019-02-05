@@ -60,6 +60,7 @@ class VariantionalAutoencoder(object):
     #self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
     self.sess = tf.InteractiveSession()
     self.sess.run(tf.global_variables_initializer())
+    self.writer = tf.summary.FileWriter('graphs', self.sess.graph)
 
   # Build the netowrk and the loss functions
   def build(self):
@@ -67,14 +68,15 @@ class VariantionalAutoencoder(object):
 
     # Encode
     # x -> z_mean, z_sigma -> z
-    # net = tf.reshape(self.x, [-1, 28, 28, 1], name='reshape1')
-    # net = slim.conv2d(net, 32, [3, 3], scope='conv1_1', activation_fn=tf.nn.elu)
-    # net = slim.max_pool2d(net, [2, 2], scope='pool1')
-    #net = slim.conv2d(net, 128, [3, 3], scope='conv3_2')
+    net = tf.reshape(self.x, [-1, 28, 28, 1], name='reshape1')
+    net = slim.conv2d(net, 32, [3, 3], scope='conv1_1', activation_fn=tf.nn.elu)
+    net = slim.max_pool2d(net, [2, 2], scope='pool1')
+    net = slim.conv2d(net, 32, [3, 3], scope='conv3_2')
+    net = slim.max_pool2d(net, [2, 2], scope='pool2')
     #net = slim.conv2d(net, 128, [3, 3], scope='conv3_3')
-    #net = slim.max_pool2d(net, [2, 2], scope='pool2')
-    #net = slim.flatten(net)
-    net = slim.fully_connected(self.x, 512, scope='enc_fc1', activation_fn=tf.nn.elu)
+    #net = slim.max_pool2d(net, [2, 2], scope='pool3')
+    net = slim.flatten(net)
+    #net = slim.fully_connected(self.x, 512, scope='enc_fc1', activation_fn=tf.nn.elu)
     net = slim.fully_connected(net, 384, scope='enc_fc2', activation_fn=tf.nn.elu)
     f3 = slim.fully_connected(net, 256, scope='enc_fc3', activation_fn=tf.nn.elu)
     self.z_mu = slim.fully_connected(f3, self.n_z, scope='enc_fc4_mu', activation_fn=None)
@@ -146,3 +148,8 @@ class VariantionalAutoencoder(object):
   def transformer(self, x):
     z = self.sess.run(self.z, feed_dict={self.x: x})
     return z
+
+  # x -> z_mu
+  def transformer2(self, x):
+    z_mu = self.sess.run(self.z_mu, feed_dict={self.x: x})
+    return z_mu
