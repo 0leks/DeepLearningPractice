@@ -43,6 +43,9 @@ def trainer(input_dim, num_samples, dataset, learning_rate=1e-3, batch_size=100,
   print('training losses: ', totalLoss)
   print('validation losses: ', validateLoss)
   print('testing losses: ', testLoss)
+  saver = tf.train.Saver()
+  save_path = saver.save(model.sess, "tmp/model.ckpt")
+  print('Model saved in path:', save_path)
   print('Done!')
   return model, totalLoss, validateLoss, testLoss
 
@@ -69,15 +72,17 @@ class VariantionalAutoencoder(object):
     # Encode
     # x -> z_mean, z_sigma -> z
     net = tf.reshape(self.x, [-1, 28, 28, 1], name='reshape1')
-    net = slim.conv2d(net, 32, [3, 3], scope='conv1_1', activation_fn=tf.nn.elu)
+    net = slim.conv2d(net, 64, [3, 3], scope='conv1_1', activation_fn=tf.nn.elu)
     net = slim.max_pool2d(net, [2, 2], scope='pool1')
-    net = slim.conv2d(net, 32, [3, 3], scope='conv3_2')
+    net = slim.conv2d(net, 128, [3, 3], scope='conv3_2')
     net = slim.max_pool2d(net, [2, 2], scope='pool2')
     #net = slim.conv2d(net, 128, [3, 3], scope='conv3_3')
     #net = slim.max_pool2d(net, [2, 2], scope='pool3')
     net = slim.flatten(net)
-    #net = slim.fully_connected(self.x, 512, scope='enc_fc1', activation_fn=tf.nn.elu)
-    net = slim.fully_connected(net, 384, scope='enc_fc2', activation_fn=tf.nn.elu)
+    net = slim.fully_connected(net, 1024, scope='enc_fc1', activation_fn=tf.nn.elu)
+    net = slim.dropout(net, 0.75, scope='dropout1')
+    net = slim.fully_connected(net, 512, scope='enc_fc2', activation_fn=tf.nn.elu)
+    net = slim.dropout(net, 0.75, scope='dropout2')
     f3 = slim.fully_connected(net, 256, scope='enc_fc3', activation_fn=tf.nn.elu)
     self.z_mu = slim.fully_connected(f3, self.n_z, scope='enc_fc4_mu', activation_fn=None)
     self.z_log_sigma_sq = slim.fully_connected(f3, self.n_z, scope='enc_fc4_sigma', activation_fn=None)
@@ -88,11 +93,14 @@ class VariantionalAutoencoder(object):
     # Decode
     # z -> x_hat
     net = slim.fully_connected(self.z, 256, scope='dec_fc1', activation_fn=tf.nn.elu)
+    net = slim.dropout(net, 0.75, scope='dropout3')
     # net = tf.reshape(g1, [-1, 16, 16, 1], name='reshape1')
     # net = slim.conv2d_transpose(net, 8, 3, activation_fn=tf.nn.elu)
     # net = slim.flatten(net)
-    net = slim.fully_connected(net, 384, scope='dec_fc2', activation_fn=tf.nn.elu)
-    net = slim.fully_connected(net, 512, scope='dec_fc3', activation_fn=tf.nn.elu)
+    net = slim.fully_connected(net, 512, scope='dec_fc2', activation_fn=tf.nn.elu)
+    net = slim.dropout(net, 0.75, scope='dropout4')
+    net = slim.fully_connected(net, 1024, scope='dec_fc3', activation_fn=tf.nn.elu)
+    net = slim.dropout(net, 0.75, scope='dropout5')
     self.x_hat = slim.fully_connected(net, 784, scope='dec_fc4', activation_fn=tf.sigmoid)
 
     # Loss

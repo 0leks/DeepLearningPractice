@@ -22,8 +22,8 @@ input_dim = mnist.train.images[0].shape[0]
 w = h = 28
 
 BATCH_SIZE = 200
-NUM_EPOCHS = 100
-LATENT_DIM = 2
+NUM_EPOCHS = 200
+LATENT_DIM = 20
 
 # resets tensorflow graph, use if training multiple graphs in same session
 #tf.reset_default_graph()
@@ -33,6 +33,7 @@ if(NUM_EPOCHS):
   # Train the model with 2d latent space
   model, trainLoss, valLoss, testLoss = vae_util.trainer(input_dim, num_sample, mnist, learning_rate=2e-4, batch_size=BATCH_SIZE, num_epoch=NUM_EPOCHS, n_z=LATENT_DIM)
 
+  #with plt.xkcd():
   print('Best validation loss:', min(valLoss))
   # plot losses
   fig, ax = plt.subplots()
@@ -63,18 +64,20 @@ if(NUM_EPOCHS):
   #batch = mnist.test.next_batch(3000)
   z = model.transformer2(batch[0])
   fig, ax = plt.subplots()
-  ax.scatter(z[:, 0], z[:, 1], c=np.argmax(batch[1], 1), alpha=0.5)
+  ax.scatter(z[:, 0], z[:, 1], c=np.argmax(batch[1], 1), alpha=0.3)
   ax.set_xlabel(r'$\mu_0$')
   ax.set_ylabel(r'$\mu_1$')
-  ax.set_title(r'Latent $\mu_0$ and $\mu_1$ for 3000 random test images')
+  ax.set_title(r'Latent $\mu_0$ and $\mu_1$ for 10000 random test images')
   #ax.colorbar()
   ax.grid()
   fig.savefig('I_transformed2.png')
 
   # Test the trained model: continuous latent space
   n = 20
-  x = np.linspace(-2, 2, n)
-  y = np.linspace(-2, 2, n)
+  # x = np.linspace(-2, 2, n)
+  # y = np.linspace(-2, 2, n)
+  x = np.linspace(-1, 1, n)
+  y = np.linspace(-1, 1, n)
 
   I_latent = np.empty((h*n, w*n))
   num_extra_latent = LATENT_DIM - 2

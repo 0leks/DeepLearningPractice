@@ -14,8 +14,8 @@
       <file leaf-file-name="Main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/../MNIST_VAE_noeager/Main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="238">
-              <caret line="29" column="0" lean-forward="true" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
+            <state relative-caret-position="306">
+              <caret line="24" column="16" lean-forward="true" selection-start-line="24" selection-start-column="16" selection-end-line="24" selection-end-column="16" />
               <folding>
                 <element signature="e#62#77#0" expanded="true" />
               </folding>
@@ -26,21 +26,11 @@
       <file leaf-file-name="vae_util.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/../MNIST_VAE_noeager/vae_util.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="255">
-              <caret line="75" column="38" lean-forward="true" selection-start-line="75" selection-start-column="38" selection-end-line="75" selection-end-column="38" />
+            <state relative-caret-position="238">
+              <caret line="92" column="12" lean-forward="true" selection-start-line="92" selection-start-column="12" selection-end-line="92" selection-end-column="12" />
               <folding>
                 <element signature="e#1#19#0" expanded="true" />
               </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="session.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/../../virtualPython/Lib/site-packages/tensorflow/python/client/session.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="122">
-              <caret line="923" column="45" lean-forward="true" selection-start-line="923" selection-start-column="45" selection-end-line="923" selection-end-column="45" />
-              <folding />
             </state>
           </provider>
         </entry>
@@ -543,28 +533,28 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/../../virtualPython/Lib/site-packages/tensorflow/python/client/session.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-82">
+          <caret line="923" column="45" lean-forward="false" selection-start-line="923" selection-start-column="45" selection-end-line="923" selection-end-column="45" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/../MNIST_VAE_noeager/vae_util.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="255">
-          <caret line="75" column="38" lean-forward="true" selection-start-line="75" selection-start-column="38" selection-end-line="75" selection-end-column="38" />
+        <state relative-caret-position="238">
+          <caret line="92" column="12" lean-forward="true" selection-start-line="92" selection-start-column="12" selection-end-line="92" selection-end-column="12" />
           <folding>
             <element signature="e#1#19#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/../../virtualPython/Lib/site-packages/tensorflow/python/client/session.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="122">
-          <caret line="923" column="45" lean-forward="true" selection-start-line="923" selection-start-column="45" selection-end-line="923" selection-end-column="45" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/../MNIST_VAE_noeager/Main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="29" column="0" lean-forward="true" selection-start-line="29" selection-start-column="0" selection-end-line="29" selection-end-column="0" />
+        <state relative-caret-position="306">
+          <caret line="24" column="16" lean-forward="true" selection-start-line="24" selection-start-column="16" selection-end-line="24" selection-end-column="16" />
           <folding>
             <element signature="e#62#77#0" expanded="true" />
           </folding>
