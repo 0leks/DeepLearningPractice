@@ -2,7 +2,6 @@
 import numpy as np
 import tensorflow as tf
 import time
-from tensorflow.contrib.slim import fully_connected as fc
 from tensorflow.contrib import slim
 
 
@@ -11,8 +10,12 @@ def trainer(input_dim, num_samples, dataset, learning_rate=1e-3, batch_size=100,
   model = VariantionalAutoencoder(input_dim, learning_rate=learning_rate,
                                   batch_size=batch_size, n_z=n_z)
 
+  totalLoss = []
+  testLoss = []
+  validateLoss = []
   for epoch in range(num_epoch):
     start_time = time.time()
+    epochLoss = []
     for iter in range(num_samples // batch_size):
       # Obtain a batch
       batch = dataset.train.next_batch(batch_size)
@@ -21,12 +24,27 @@ def trainer(input_dim, num_samples, dataset, learning_rate=1e-3, batch_size=100,
       #print(batch.shape)
       # Execute the forward and the backward pass and report computed losses
       loss, recon_loss, latent_loss = model.run_single_step(batch)
+      epochLoss.append(loss)
+    totalLoss.append(sum(epochLoss) / len(epochLoss))
     delta_time = time.time() - start_time
+
+    batch = dataset.validation.next_batch(10000)[0]
+    x_hat = model.reconstructor(batch)
+    vloss, _, _ = model.compute_loss(batch)
+    validateLoss.append(vloss)
+
+    batch = dataset.test.next_batch(10000)[0]
+    x_hat = model.reconstructor(batch)
+    tloss, _, _ = model.compute_loss(batch)
+    testLoss.append(tloss)
+
     if epoch % 1 == 0:
       print('[Epoch {} Time {}s] Loss: {}, Recon loss: {}, Latent loss: {}'.format(epoch, delta_time, loss, recon_loss, latent_loss))
-
+  print('training losses: ', totalLoss)
+  print('validation losses: ', validateLoss)
+  print('testing losses: ', testLoss)
   print('Done!')
-  return model
+  return model, totalLoss, validateLoss, testLoss
 
 
 class VariantionalAutoencoder(object):
@@ -39,6 +57,7 @@ class VariantionalAutoencoder(object):
 
     self.build()
 
+    #self.sess = tf.InteractiveSession(config=tf.ConfigProto(log_device_placement=True))
     self.sess = tf.InteractiveSession()
     self.sess.run(tf.global_variables_initializer())
 
@@ -48,31 +67,31 @@ class VariantionalAutoencoder(object):
 
     # Encode
     # x -> z_mean, z_sigma -> z
-    net = tf.reshape(self.x, [-1, 28, 28, 1], name='reshape1')
-    net = slim.conv2d(net, 32, [3, 3], scope='conv1_1', activation_fn=tf.nn.elu)
-    net = slim.max_pool2d(net, [2, 2], scope='pool1')
+    # net = tf.reshape(self.x, [-1, 28, 28, 1], name='reshape1')
+    # net = slim.conv2d(net, 32, [3, 3], scope='conv1_1', activation_fn=tf.nn.elu)
+    # net = slim.max_pool2d(net, [2, 2], scope='pool1')
     #net = slim.conv2d(net, 128, [3, 3], scope='conv3_2')
     #net = slim.conv2d(net, 128, [3, 3], scope='conv3_3')
     #net = slim.max_pool2d(net, [2, 2], scope='pool2')
-    net = slim.flatten(net)
-    #f1 = fc(net, 512, scope='enc_fc1', activation_fn=tf.nn.elu)
-    #f2 = fc(f1, 384, scope='enc_fc2', activation_fn=tf.nn.elu)
-    f3 = fc(net, 256, scope='enc_fc3', activation_fn=tf.nn.elu)
-    self.z_mu = fc(f3, self.n_z, scope='enc_fc4_mu', activation_fn=None)
-    self.z_log_sigma_sq = fc(f3, self.n_z, scope='enc_fc4_sigma', activation_fn=None)
+    #net = slim.flatten(net)
+    net = slim.fully_connected(self.x, 512, scope='enc_fc1', activation_fn=tf.nn.elu)
+    net = slim.fully_connected(net, 384, scope='enc_fc2', activation_fn=tf.nn.elu)
+    f3 = slim.fully_connected(net, 256, scope='enc_fc3', activation_fn=tf.nn.elu)
+    self.z_mu = slim.fully_connected(f3, self.n_z, scope='enc_fc4_mu', activation_fn=None)
+    self.z_log_sigma_sq = slim.fully_connected(f3, self.n_z, scope='enc_fc4_sigma', activation_fn=None)
     eps = tf.random_normal(shape=tf.shape(self.z_log_sigma_sq),
                            mean=0, stddev=1, dtype=tf.float32)
     self.z = self.z_mu + tf.sqrt(tf.exp(self.z_log_sigma_sq)) * eps
 
     # Decode
     # z -> x_hat
-    g1 = fc(self.z, 256, scope='dec_fc1', activation_fn=tf.nn.elu)
-    net = tf.reshape(g1, [-1, 16, 16, 1], name='reshape1')
-    net = slim.conv2d_transpose(net, 8, 3, activation_fn=tf.nn.elu)
-    net = slim.flatten(net)
-    #g2 = fc(g1, 384, scope='dec_fc2', activation_fn=tf.nn.elu)
-    #g3 = fc(net, 512, scope='dec_fc3', activation_fn=tf.nn.elu)
-    self.x_hat = fc(net, 784, scope='dec_fc4', activation_fn=tf.sigmoid)
+    net = slim.fully_connected(self.z, 256, scope='dec_fc1', activation_fn=tf.nn.elu)
+    # net = tf.reshape(g1, [-1, 16, 16, 1], name='reshape1')
+    # net = slim.conv2d_transpose(net, 8, 3, activation_fn=tf.nn.elu)
+    # net = slim.flatten(net)
+    net = slim.fully_connected(net, 384, scope='dec_fc2', activation_fn=tf.nn.elu)
+    net = slim.fully_connected(net, 512, scope='dec_fc3', activation_fn=tf.nn.elu)
+    self.x_hat = slim.fully_connected(net, 784, scope='dec_fc4', activation_fn=tf.sigmoid)
 
     # Loss
     # Reconstruction loss
@@ -105,6 +124,14 @@ class VariantionalAutoencoder(object):
     )
     return loss, recon_loss, latent_loss
 
+  def compute_loss(self, x):
+    loss, recon_loss, latent_loss = self.sess.run(
+      [self.total_loss, self.recon_loss, self.latent_loss],
+      feed_dict={self.x: x}
+    )
+    return loss, recon_loss, latent_loss
+
+
   # x -> x_hat
   def reconstructor(self, x):
     x_hat = self.sess.run(self.x_hat, feed_dict={self.x: x})
@@ -119,10 +146,3 @@ class VariantionalAutoencoder(object):
   def transformer(self, x):
     z = self.sess.run(self.z, feed_dict={self.x: x})
     return z
-
-
-class Test(object):
-  def __init__(self):
-    self.a = 10
-    self.b = 20
-
