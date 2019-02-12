@@ -22,7 +22,7 @@ input_dim = mnist.train.images[0].shape[0]
 w = h = 28
 
 BATCH_SIZE = 500
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 LATENT_DIM = 2
 
 # resets tensorflow graph, use if training multiple graphs in same session
