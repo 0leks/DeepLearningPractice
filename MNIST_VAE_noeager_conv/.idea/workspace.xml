@@ -7,20 +7,10 @@
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/latent_inverted.png" afterPath="$PROJECT_DIR$/latent_inverted.png" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/losses.png" afterPath="$PROJECT_DIR$/losses.png" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/reconstructed.png" afterPath="$PROJECT_DIR$/reconstructed.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tmp/model.ckpt.data-00000-of-00001" afterPath="$PROJECT_DIR$/tmp/model.ckpt.data-00000-of-00001" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tmp/model.ckpt.index" afterPath="$PROJECT_DIR$/tmp/model.ckpt.index" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tmp/model.ckpt.meta" afterPath="$PROJECT_DIR$/tmp/model.ckpt.meta" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/transformed.png" afterPath="$PROJECT_DIR$/transformed.png" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../MNIST_VAE_noeager/Main.py" afterPath="$PROJECT_DIR$/../MNIST_VAE_noeager/Main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../MNIST_VAE_noeager/vae_util.py" afterPath="$PROJECT_DIR$/../MNIST_VAE_noeager/vae_util.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/MNIST_VAE_noeager.iml" afterPath="$PROJECT_DIR$/.idea/MNIST_VAE_noeager.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/misc.xml" afterPath="$PROJECT_DIR$/.idea/misc.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/Main.py" afterPath="$PROJECT_DIR$/Main.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/tmp/checkpoint" afterPath="$PROJECT_DIR$/tmp/checkpoint" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/vae_util.py" afterPath="$PROJECT_DIR$/vae_util.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../MNIST_classify/.idea/NeuralNet1.iml" afterPath="$PROJECT_DIR$/../MNIST_classify/.idea/NeuralNet1.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../MNIST_classify/.idea/modules.xml" afterPath="$PROJECT_DIR$/../MNIST_classify/.idea/modules.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../MNIST_classify/.idea/workspace.xml" afterPath="$PROJECT_DIR$/../MNIST_classify/.idea/workspace.xml" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -35,8 +25,8 @@
       <file leaf-file-name="Main.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/Main.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="24" column="16" lean-forward="true" selection-start-line="24" selection-start-column="16" selection-end-line="24" selection-end-column="16" />
+            <state relative-caret-position="476">
+              <caret line="34" column="17" lean-forward="true" selection-start-line="34" selection-start-column="17" selection-end-line="34" selection-end-column="17" />
               <folding />
             </state>
           </provider>
@@ -205,8 +195,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/Main.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="24" column="16" lean-forward="true" selection-start-line="24" selection-start-column="16" selection-end-line="24" selection-end-column="16" />
+        <state relative-caret-position="476">
+          <caret line="34" column="17" lean-forward="true" selection-start-line="34" selection-start-column="17" selection-end-line="34" selection-end-column="17" />
           <folding />
         </state>
       </provider>
