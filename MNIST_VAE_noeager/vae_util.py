@@ -91,8 +91,10 @@ class VariantionalAutoencoder(object):
     self.z = self.z_mu + tf.sqrt(tf.exp(self.z_log_sigma_sq)) * eps
 
     # Decode
+    # shape is [1, 1, 2, 1]
     # z -> x_hat
     net = slim.fully_connected(self.z, 256, scope='dec_fc1', activation_fn=tf.nn.elu)
+    # shape is [1, 1, 256, 1]
     net = slim.dropout(net, 0.75, scope='dropout3')
     # net = tf.reshape(g1, [-1, 16, 16, 1], name='reshape1')
     # net = slim.conv2d_transpose(net, 8, 3, activation_fn=tf.nn.elu)

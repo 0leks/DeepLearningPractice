@@ -21,8 +21,8 @@ print('validate shape: ', mnist.validation.images.shape)
 input_dim = mnist.train.images[0].shape[0]
 w = h = 28
 
-BATCH_SIZE = 100
-NUM_EPOCHS = 50
+BATCH_SIZE = 500
+NUM_EPOCHS = 100
 LATENT_DIM = 2
 
 # resets tensorflow graph, use if training multiple graphs in same session
@@ -76,7 +76,7 @@ ax.grid()
 fig.savefig('transformed.png')
 
 ###### Test the trained model: continuous latent space ######
-n = 80
+n = 40
 minRange = -4
 maxRange = 4
 x = np.linspace(minRange, maxRange, n)
@@ -99,7 +99,7 @@ fig = plt.figure(num=None, figsize=(6.4, 4.8), dpi=int(n*28/2))
 
 plt.imshow(I_latent, cmap="gray")
 plt.xticks((0, n*28), (minRange, maxRange))
-plt.yticks((0, n*28), (minRange, maxRange))
+plt.yticks((0, n*28), (maxRange, minRange))
 plt.xlabel(r'$\mu_0$')
 plt.ylabel(r'$\mu_1$')
 plt.title('Sampling latent space across first two variables (others set to 0)')
@@ -110,7 +110,7 @@ plt.close(fig)
 fig = plt.figure(num=None, figsize=(6.4, 4.8), dpi=int(n*28/2))
 plt.imshow(-I_latent, cmap="gray")
 plt.xticks((0, n*28), (minRange, maxRange))
-plt.yticks((0, n*28), (minRange, maxRange))
+plt.yticks((0, n*28), (maxRange, minRange))
 plt.xlabel(r'$\mu_0$')
 plt.ylabel(r'$\mu_1$')
 plt.title('Sampling latent space across first two variables (others set to 0)')
