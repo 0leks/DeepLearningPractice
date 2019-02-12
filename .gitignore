@@ -102,3 +102,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+MNIST_VAE_noeager_conv/\.idea/workspace\.xml
+
+MNIST_VAE_noeager_conv/\.idea/MNIST_VAE_noeager\.iml
+
+MNIST_VAE_noeager_conv/\.idea/misc\.xml
