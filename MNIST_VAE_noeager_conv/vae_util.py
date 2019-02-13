@@ -35,6 +35,9 @@ def trainer(input_dim, num_samples, dataset, learning_rate=1e-3, batch_size=100,
     vloss, _, _ = model.compute_loss(batch)
     validateLoss.append(vloss)
 
+    summary = model.sess.run(merge, feed_dict={model.x: dataset.validation.next_batch(10000)[0], model.is_train: False})
+    model.writer.add_summary(summary, epoch)
+
     # batch = dataset.test.next_batch(10000)[0]
     # x_hat = model.reconstructor(batch)
     # tloss, _, _ = model.compute_loss(batch)
@@ -42,6 +45,7 @@ def trainer(input_dim, num_samples, dataset, learning_rate=1e-3, batch_size=100,
 
     if epoch % 1 == 0:
       print('[Epoch {} Time {}s] Loss: {}, Recon loss: {}, Latent loss: {}'.format(epoch, delta_time, totalLoss[-1], recon_loss, latent_loss))
+
   print('training losses: ', totalLoss)
   print('validation losses: ', validateLoss)
   print('testing losses: ', testLoss)
@@ -67,9 +71,9 @@ class VariantionalAutoencoder(object):
     self.sess.run(tf.global_variables_initializer())
     self.writer = tf.summary.FileWriter('graphs', self.sess.graph)
 
-  def variable_summaries(self, var):
+  def add_summaries(self, var, name='summary'):
     """Attach a lot of summaries to a Tensor (for TensorBoard visualization)."""
-    with tf.name_scope('summaries'):
+    with tf.name_scope(name):
       mean = tf.reduce_mean(var)
       tf.summary.scalar('mean', mean)
       with tf.name_scope('stddev'):
@@ -85,21 +89,22 @@ class VariantionalAutoencoder(object):
     self.x = tf.placeholder(name='x', dtype=tf.float32, shape=[None, 784])
     self.is_train = tf.placeholder(tf.bool, name="is_train");
     net = self.x
+    self.add_summaries(net, 'x')
     print(net.get_shape()) # (?, 784)
-    outerLayerSize = 600
-    innerLayerSize = 400
+    outerLayerSize = 200
+    innerLayerSize = 100
 
     # Encode
     # x -> z_mean, z_sigma -> z
     net = slim.fully_connected(net, outerLayerSize, scope='enc_fc1', activation_fn=tf.nn.elu)
-    net = slim.dropout(net, 0.75, scope='enc_dropout3')
     net = tf.layers.batch_normalization(net, training=self.is_train)
     print(net.get_shape()) # (?, 200)
+    self.add_summaries(net)
 
     net = slim.fully_connected(net, innerLayerSize, scope='enc_fc2', activation_fn=tf.nn.elu)
-    net = slim.dropout(net, 0.75, scope='enc_dropout4')
     net = tf.layers.batch_normalization(net, training=self.is_train)
     print(net.get_shape()) # (?, 200)
+    self.add_summaries(net)
 
     self.z_mu = slim.fully_connected(net, self.n_z, scope='enc_fc3_mu', activation_fn=None)
     print('z_mu shape: ', self.z_mu.get_shape()) # (?, 2)
@@ -110,22 +115,25 @@ class VariantionalAutoencoder(object):
       self.z = self.z_mu + tf.sqrt(tf.exp(self.z_log_sigma_sq)) * eps
       print('z shape: ', self.z.get_shape()) # (?, 2)
       net = self.z
+    self.add_summaries(net, 'z')
 
 
     # Decode
     # z -> x_hat
     net = slim.fully_connected(net, innerLayerSize, scope='dec_fc1', activation_fn=tf.nn.elu)
-    net = slim.dropout(net, 0.75, scope='dec_dropout1')
     net = tf.layers.batch_normalization(net, training=self.is_train)
     print(net.get_shape())
+    self.add_summaries(net)
+
 
     net = slim.fully_connected(net, outerLayerSize, scope='dec_fc2', activation_fn=tf.nn.elu)
-    net = slim.dropout(net, 0.75, scope='dec_dropout2')
     net = tf.layers.batch_normalization(net, training=self.is_train)
     print(net.get_shape())
+    self.add_summaries(net)
 
     self.x_hat = slim.fully_connected(net, 784, scope='dec_fc3', activation_fn=tf.sigmoid) #tf.nn.elu
     print(self.x_hat.get_shape())
+    self.add_summaries(net, 'x_hat')
 
     # Loss
     # Reconstruction loss
@@ -138,6 +146,7 @@ class VariantionalAutoencoder(object):
         axis=1
       )
       self.recon_loss = tf.reduce_mean(recon_loss)
+    self.summary_recon_loss = tf.summary.scalar('reconstruction loss', self.recon_loss)
 
     # Latent loss
     with tf.name_scope('latent_loss'):
@@ -145,15 +154,18 @@ class VariantionalAutoencoder(object):
       # Here we measure the divergence between the latent distribution and N(0, 1)
       latent_loss = -0.5 * tf.reduce_sum(1 + self.z_log_sigma_sq - tf.square(self.z_mu) - tf.exp(self.z_log_sigma_sq), axis=1)
       self.latent_loss = tf.reduce_mean(latent_loss)
+    self.summary_latent_loss = tf.summary.scalar('latent loss', self.latent_loss)
 
     with tf.name_scope('total_loss'):
       self.total_loss = tf.reduce_mean(recon_loss + latent_loss)
+    self.summary_total_loss = tf.summary.scalar('total loss', self.total_loss)
 
     #with tf.name_scope('Trainer'):
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
     with tf.control_dependencies(update_ops):
       self.train_op = tf.train.AdamOptimizer(learning_rate=self.learning_rate).minimize(self.total_loss)
     return
+
 
   # Execute the forward and the backward pass
   def run_single_step(self, x):
