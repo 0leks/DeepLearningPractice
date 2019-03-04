@@ -8,6 +8,9 @@ import numpy as np
 import glob
 import matplotlib.pyplot as plt
 
+
+print('tensorflow version:', tf.__version__)
+
 tf.enable_eager_execution()
 
 (train_images, _), (test_images, _) = tf.keras.datasets.mnist.load_data()
