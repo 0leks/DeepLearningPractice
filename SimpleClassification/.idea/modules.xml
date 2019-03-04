@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/SimpleClissification.iml" filepath="$PROJECT_DIR$/.idea/SimpleClissification.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/SimpleClassification.iml" filepath="$PROJECT_DIR$/.idea/SimpleClassification.iml" />
     </modules>
   </component>
 </project>

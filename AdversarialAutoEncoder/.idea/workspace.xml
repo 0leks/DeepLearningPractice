@@ -2,11 +2,22 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="0de5c522-644f-4cd3-ab8a-f791671b0e17" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../SimpleClassification/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../SimpleClassification/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/../.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/AdversarialAutoEncoder.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AdversarialAutoEncoder.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/data_utils.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MNIST_classify/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../MNIST_classify/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../MNIST_classify/mnist.py" beforeDir="false" afterPath="$PROJECT_DIR$/../MNIST_classify/mnist.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SimpleClissification/.idea/SimpleClissification.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../SimpleClassification/.idea/SimpleClassification.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SimpleClissification/.idea/encodings.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../SimpleClassification/.idea/encodings.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SimpleClissification/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../SimpleClassification/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SimpleClissification/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SimpleClissification/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../SimpleClassification/.idea/vcs.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SimpleClissification/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../SimpleClissification/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../SimpleClassification/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../data_utils/__init__.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../data_utils/data_utils.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -78,7 +89,7 @@
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/../data_utils" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/.." />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
   </component>
   <component name="RunDashboard">
