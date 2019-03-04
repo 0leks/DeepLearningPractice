@@ -13,19 +13,21 @@ plt.ioff()
 
 print('tensorflow version:', tf.__version__)
 
-(xtrain, ytrain), (xvalidate, yvalidate) = utils.data.getMNISTdatasetClassification(validation_ratio=1/6)
+(xtrain, ytrain), (xvalidate, yvalidate) = utils.data.getFashionMNISTdatasetClassification(validation_ratio=1/6)
+#(xtrain, ytrain), (xvalidate, yvalidate) = utils.data.getMNISTdatasetClassification(validation_ratio=1/6)
 
 class_names = ['T-shirt', 'Trouser', 'Pullover', 'Dress', 'Coat',
                'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
 
-modelShape = [512, 256, 128, 10]
-model = utils.models.makeDenseClassifierModel((28, 28, 1), [512, 256, 128, 10])
+#modelShape = [512, 256, 128, 10]
+modelShape = [512, 256, 128, 64, 32, 16, 10]
+model = utils.models.makeDenseClassifierModel((28, 28, 1), modelShape)
 
 model.compile(optimizer=tf.train.AdamOptimizer(),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
-numEpochs = 50
+numEpochs = 10
 trainLoss = [0] * numEpochs
 validationLoss = [0] * numEpochs
 
