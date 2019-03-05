@@ -10,7 +10,7 @@ import utils.data
 import utils.models
 
 print('Loading fashion mnist data from file')
-(xtrain, ytrain), (xvalidate, yvalidate) = utils.data.loadCSVImageDataset('C:/Users/oleks/Documents/Workspace/DeepLearningPractice/fashionmnist/fashion-mnist_train.csv')
+(xtrain, ytrain), (xvalidate, yvalidate) = utils.data.loadCSVImageDataset('../fashionmnist/fashion-mnist_train.csv')
 
 plt.imshow(xtrain[0, :, :, 0],  cmap='Greys')
 plt.colorbar()
