@@ -10,7 +10,8 @@ def dispInfo(name, x, y=None):
 
 def getNormalizedData(all_images, all_labels, validation_ratio):
     all_images = all_images.reshape(all_images.shape[0], 28, 28, 1).astype('float32')
-    all_images = (all_images - 127.5) / 127.5  # Normalize the images to [-1, 1]=
+    #all_images = (all_images - 127.5) / 127.5  # Normalize the images to [-1, 1]
+    all_images = all_images / 255.  # Normalize the images to [0, 1]
     dispInfo('Loaded', all_images, all_labels)
     
     XTraining, XValidation, YTraining, YValidation = train_test_split(all_images,all_labels,stratify=all_labels,test_size=validation_ratio)

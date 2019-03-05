@@ -1,15 +1,8 @@
 import tensorflow as tf
 
-import matplotlib
-matplotlib.use('Agg') # Allows generating plots without popup. Must call before importing pyplot.
-import matplotlib.pyplot as plt
-
 import utils.general
 import utils.data
 import utils.models
-
-# turns off interactive mode for pyplot
-plt.ioff()
 
 print('tensorflow version:', tf.__version__)
 
@@ -23,7 +16,7 @@ class_names = ['T-shirt', 'Trouser', 'Pullover', 'Dress', 'Coat',
 modelShape = [512, 256, 128, 64, 32, 16, 10]
 model = utils.models.makeDenseClassifierModel((28, 28, 1), modelShape)
 
-model.compile(optimizer=tf.train.AdamOptimizer(),
+model.compile(optimizer=tf.train.AdamOptimizer(learning_rate=0.1),
               loss='sparse_categorical_crossentropy',
               metrics=['accuracy'])
 
@@ -41,13 +34,4 @@ for i in range(numEpochs):
     validation_loss, validation_acc = model.evaluate(xvalidate, yvalidate)
     validationLoss[i] = validation_loss
 
-# TODO add title and save figure as png instead of displaying plot
-# TODO create local library for saving images, loading data
-plt.figure()
-plt.plot(trainLoss, label='Train Set')
-plt.plot(validationLoss, label='Validation Set')
-plt.xlabel('Epoch')
-plt.ylabel('Loss (sparse_categorical_crossentropy')
-plt.legend()
-plt.title('Dense classifier(' + str(modelShape) + ')')
-plt.savefig('losses.png')
+utils.general.plotLosses([trainLoss, validationLoss], ['Train Set', 'Validation Set'], 'Dense classifier(' + str(modelShape) + ')', 'losses.png')
