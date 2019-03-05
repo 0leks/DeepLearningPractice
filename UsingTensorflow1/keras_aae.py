@@ -15,19 +15,20 @@ output_dim = np.prod(input_shape)
 latent_dim = 2
 latent_shape = (latent_dim,)
 
+outerLayerDim = 32
+innerLayerDim = 64
+
 def build_encoder():
 
     model = tf.keras.Sequential()
 
-    model.add(tf.keras.layers.Conv2D(32, (3,3), activation='relu', input_shape=input_shape))
+    model.add(tf.keras.layers.Conv2D(outerLayerDim, (3,3), padding='same', activation='relu', input_shape=input_shape))
     model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
-    model.add(tf.keras.layers.Conv2D(32, (3,3), activation='relu'))
+    model.add(tf.keras.layers.Conv2D(innerLayerDim, (3,3), padding='same', activation='relu'))
     model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
     model.add(tf.keras.layers.Flatten())
-    model.add(tf.keras.layers.Dense(512))
-    model.add(tf.keras.layers.LeakyReLU(alpha=0.2))
-    model.add(tf.keras.layers.Dense(256))
-    model.add(tf.keras.layers.LeakyReLU(alpha=0.2))
+    model.add(tf.keras.layers.Dense(512, activation='relu'))
+    model.add(tf.keras.layers.Dense(256, activation='relu'))
     model.add(tf.keras.layers.Dense(latent_dim))
     #model.add(tf.keras.layers.LeakyReLU(alpha=0.2))
     model.summary()
@@ -42,12 +43,17 @@ def build_decoder():
 
     model = tf.keras.Sequential()
 
-    model.add(tf.keras.layers.Dense(256, input_shape=latent_shape))
-    model.add(tf.keras.layers.LeakyReLU(alpha=0.2))
-    model.add(tf.keras.layers.Dense(512))
-    model.add(tf.keras.layers.LeakyReLU(alpha=0.2))
-    model.add(tf.keras.layers.Dense(output_dim, activation='sigmoid'))
-    model.add(tf.keras.layers.Reshape(input_shape))
+    model.add(tf.keras.layers.Dense(256, input_shape=latent_shape, activation='relu'))
+    model.add(tf.keras.layers.Dense(512, activation='relu'))
+    model.add(tf.keras.layers.Dense(7*7*innerLayerDim, activation='relu'))
+    model.add(tf.keras.layers.Reshape((7,7,innerLayerDim)))
+    model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
+    model.add(tf.keras.layers.Conv2D(outerLayerDim, (3,3), padding='same', activation='relu'))
+    #model.add(tf.keras.layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), padding='same', activation='relu'))
+    model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
+    model.add(tf.keras.layers.Conv2D(1, (3,3), padding='same', activation='sigmoid'))
+    #model.add(tf.keras.layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), padding='same', activation='sigmoid'))
+    #model.add(tf.keras.layers.Reshape(input_shape))
     model.summary()
 
     latent = tf.keras.Input(shape=latent_shape)
