@@ -43,7 +43,7 @@ def build_generator():
     model.add(tf.keras.layers.Dense(1024))
     model.add(tf.keras.layers.LeakyReLU(alpha=0.2))
     model.add(tf.keras.layers.BatchNormalization(momentum=0.8))
-    model.add(tf.keras.layers.Dense(np.prod(input_shape), activation='sigmoid'))
+    model.add(tf.keras.layers.Dense(np.prod(input_shape), activation='tanh'))
     model.add(tf.keras.layers.Reshape(input_shape))
 
     model.summary()
@@ -147,14 +147,14 @@ for epoch in range(epochs):
         plt.imshow(gen_imgs[i, :, :, 0], cmap='Greys')
         plt.xticks([])
         plt.yticks([])
-        plt.savefig('agenerated' + str(epoch) + '_' + str(i) + '.png', bbox_inches='tight')
+        plt.savefig('images/agenerated' + str(epoch) + '_' + str(i) + '.png', bbox_inches='tight')
         plt.close()
     for i in range(5):
         plt.figure()
         plt.imshow(gen_imgs2[i, :, :, 0], cmap='Greys')
         plt.xticks([])
         plt.yticks([])
-        plt.savefig('agenerated' + str(epoch) + '_' + str(i+5) + '.png', bbox_inches='tight')
+        plt.savefig('images/agenerated' + str(epoch) + '_' + str(i+5) + '.png', bbox_inches='tight')
         plt.close()
 
     utils.general.plotLosses([d_losses], ['d_loss'], 'keras_gan', 'keras_gan_d_losses.png')

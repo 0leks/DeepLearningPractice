@@ -1,5 +1,6 @@
 Interpreters/
 datasets/
+test_runs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -121,3 +122,5 @@ UsingTensorflow1/\.idea/misc\.xml
 UsingTensorflow1/\.idea/UsingTensorflow1\.iml
 
 UsingTensorflow1/\.idea/workspace\.xml
+
+UsingTensorflow1/\.idea/modules\.xml
