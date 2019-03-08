@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
 from sklearn.model_selection import train_test_split
+import cv2 # pip install opencv-python
 
 def dispInfo(name, x, y=None):
     string = name + ': ' + str(x.shape) + ' ' + str(np.amin(x)) + '->' + str(np.amax(x))
@@ -18,6 +19,14 @@ def getNormalizedData(all_images, all_labels, validation_ratio):
     dispInfo('Training', XTraining, YTraining)
     dispInfo('Validation', XValidation, YValidation)
     return (XTraining, YTraining), (XValidation, YValidation)
+
+def getCannyEdgeDetectionFromData(all_images, threshold1, threshold2):
+    uint8 = np.uint8(255*all_images[:, :, :, :])
+    canny = np.asarray([cv2.Canny(image, threshold1, threshold2) for image in uint8])
+    canny = np.reshape(canny, all_images.shape).astype('float32')
+    canny = canny / 255.
+    dispInfo('Loaded Canny', canny)
+    return canny
 
 
 def getMNISTdatasetClassification(validation_ratio = 1/6):

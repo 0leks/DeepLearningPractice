@@ -16,3 +16,11 @@ def plotLosses(lossArrays, lossLabels, title, filePath):
     plt.title(title)
     plt.savefig(filePath)
     plt.close()
+
+def saveImage(image, filePath):
+    plt.figure()
+    plt.imshow(image, vmin=0, vmax=1, cmap='Greys')
+    plt.xticks([])
+    plt.yticks([])
+    plt.savefig(filePath, bbox_inches='tight')
+    plt.close()

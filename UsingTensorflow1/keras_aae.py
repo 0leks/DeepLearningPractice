@@ -1,6 +1,7 @@
 #https://skymind.ai/wiki/generative-adversarial-network-gan
 import tensorflow as tf
 import numpy as np
+from sklearn.decomposition import PCA
 
 import matplotlib
 matplotlib.use('Agg') # Allows generating plots without popup. Must call before importing pyplot.
@@ -12,21 +13,27 @@ import utils.general
 
 input_shape = (28, 28, 1)
 output_dim = np.prod(input_shape)
-latent_dim = 2
+latent_dim = 32
 latent_shape = (latent_dim,)
 
 outerLayerDim = 32
 innerLayerDim = 64
+useConvEncoder = True
+useConvDecoder = True
 
 def build_encoder():
 
     model = tf.keras.Sequential()
 
-    model.add(tf.keras.layers.Conv2D(outerLayerDim, (3,3), padding='same', activation='relu', input_shape=input_shape))
-    model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
-    model.add(tf.keras.layers.Conv2D(innerLayerDim, (3,3), padding='same', activation='relu'))
-    model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
-    model.add(tf.keras.layers.Flatten())
+    if( useConvEncoder):
+        model.add(tf.keras.layers.Conv2D(outerLayerDim, (3,3), padding='same', activation='relu', input_shape=input_shape))
+        model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+        model.add(tf.keras.layers.Conv2D(innerLayerDim, (3,3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+        model.add(tf.keras.layers.Flatten())
+    else:
+        model.add(tf.keras.layers.Flatten(input_shape=input_shape))
+
     model.add(tf.keras.layers.Dense(512, activation='relu'))
     model.add(tf.keras.layers.Dense(256, activation='relu'))
     model.add(tf.keras.layers.Dense(latent_dim))
@@ -45,15 +52,19 @@ def build_decoder():
 
     model.add(tf.keras.layers.Dense(256, input_shape=latent_shape, activation='relu'))
     model.add(tf.keras.layers.Dense(512, activation='relu'))
-    model.add(tf.keras.layers.Dense(7*7*innerLayerDim, activation='relu'))
-    model.add(tf.keras.layers.Reshape((7,7,innerLayerDim)))
-    model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
-    model.add(tf.keras.layers.Conv2D(outerLayerDim, (3,3), padding='same', activation='relu'))
-    #model.add(tf.keras.layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), padding='same', activation='relu'))
-    model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
-    model.add(tf.keras.layers.Conv2D(1, (3,3), padding='same', activation='sigmoid'))
-    #model.add(tf.keras.layers.Conv2DTranspose(32, (3, 3), strides=(2, 2), padding='same', activation='sigmoid'))
-    #model.add(tf.keras.layers.Reshape(input_shape))
+
+    if( useConvDecoder):
+        model.add(tf.keras.layers.Dense(7*7*innerLayerDim, activation='relu'))
+        model.add(tf.keras.layers.Reshape((7,7,innerLayerDim)))
+        model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
+        model.add(tf.keras.layers.Conv2D(outerLayerDim, (3,3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
+        model.add(tf.keras.layers.Conv2D(1, (3,3), padding='same', activation='sigmoid'))
+
+    else:
+        model.add(tf.keras.layers.Dense(np.product(input_shape), activation='sigmoid'))
+
+    model.add(tf.keras.layers.Reshape(input_shape))
     model.summary()
 
     latent = tf.keras.Input(shape=latent_shape)
@@ -229,13 +240,13 @@ for epoch in range(epochs):
     plt.close(fig)
 
     ###### Test the trained model: transformation plot only mu ######
-    # batch = mnist.test.next_batch(3000)
-    batch = xvalidate
-    z = encoder.predict(batch)
+    z = encoder.predict(xvalidate)
+    if latent_dim > 2:
+        print('Doing PCA')
+        z = PCA(n_components=2).fit_transform(z)
+
     fig, ax = plt.subplots()
-    colorValues = yvalidate#np.argmax(yvalidate, 1)  # * 9 / 8 - 0.5
-    s = ax.scatter(z[:, 0], z[:, 1], s=4, c=colorValues, alpha=0.5, cmap='tab10')
-    # s = ax.scatter(z[:, 0], z[:, 1], c=np.argmax(batch[1], 1), alpha=0.3)
+    s = ax.scatter(z[:, 0], z[:, 1], s=4, c=yvalidate, alpha=0.5, cmap='tab10')
     ax.set_xlabel(r'$\mu_0$')
     ax.set_ylabel(r'$\mu_1$')
     ax.set_title(r'Latent $\mu_0$ and $\mu_1$ for 10000 validation images')
