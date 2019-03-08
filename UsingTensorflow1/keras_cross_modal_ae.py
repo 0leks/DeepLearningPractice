@@ -1,33 +1,42 @@
-#https://skymind.ai/wiki/generative-adversarial-network-gan
 import tensorflow as tf
 import numpy as np
 from sklearn.decomposition import PCA
-import cv2
 
-import matplotlib
-matplotlib.use('Agg') # Allows generating plots without popup. Must call before importing pyplot.
-import matplotlib.pyplot as plt
 
 import utils.data
 import utils.general
 
+useFashionDataset = True
+useConvEncoder = True
+useConvDecoder = useConvEncoder
+latent_dim = 2
+outerLayerDim = 8
+innerLayerDim = 16
+batch_size = 100
+epochs = 100
+
+runTitle = 'XModal_'
+runTitle += ('Conv_' if useConvEncoder else '')
+runTitle += ('Fashion' if useFashionDataset else 'Digits') + '_'
+runTitle += 'Latent' + str(latent_dim)
+
+debugPath = utils.general.setupDebugPath('test_runs', runTitle)
 
 # Load the dataset
-#(xtrain, xtrainlabels), (xvalidate, xvalidatelabels) = utils.data.getMNISTdatasetClassification(validation_ratio=1/6)
-(xtrain, xtrainlabels), (xvalidate, xvalidatelabels) = utils.data.getFashionMNISTdatasetClassification(validation_ratio=1/6)
+if useFashionDataset:
+    (xtrain, xtrainlabels), (xvalidate, xvalidatelabels) = utils.data.getFashionMNISTdatasetClassification(validation_ratio=1/6)
+else:
+    (xtrain, xtrainlabels), (xvalidate, xvalidatelabels) = utils.data.getMNISTdatasetClassification(validation_ratio=1/6)
 
 ytrain = utils.data.getCannyEdgeDetectionFromData(xtrain, 100, 200)
 yvalidate = utils.data.getCannyEdgeDetectionFromData(xvalidate, 100, 200)
+for i in range(20):
+    combined = np.append(xtrain[i], ytrain[i], axis=0)
+    utils.general.saveImage(combined[:, :, 0], debugPath + 'randomImage' + str(i) + '.png')
 
-input_shape = (28, 28, 1)
+input_shape = xtrain[0].shape
 output_dim = np.prod(input_shape)
-latent_dim = 2
 latent_shape = (latent_dim,)
-
-outerLayerDim = 4
-innerLayerDim = 8
-useConvEncoder = True
-useConvDecoder = True
 
 
 def build_encoder():
@@ -57,7 +66,7 @@ def build_decoder():
 
     model = tf.keras.Sequential()
 
-    model.add(tf.keras.layers.Dense(256, input_shape=latent_shape, activation='relu'))
+    model.add(tf.keras.layers.Dense(256, activation='relu', input_shape=latent_shape))
     model.add(tf.keras.layers.Dense(512, activation='relu'))
 
     if useConvDecoder:
@@ -67,7 +76,6 @@ def build_decoder():
         model.add(tf.keras.layers.Conv2D(outerLayerDim, (3,3), padding='same', activation='relu'))
         model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
         model.add(tf.keras.layers.Conv2D(1, (3,3), padding='same', activation='sigmoid'))
-
     else:
         model.add(tf.keras.layers.Dense(np.product(input_shape), activation='sigmoid'))
 
@@ -81,6 +89,7 @@ def build_decoder():
 
 
 optimizer = tf.train.AdamOptimizer(0.0002)
+loss_function = 'binary_crossentropy'
 
 x_encoder = build_encoder()
 x_encoder.compile(loss='binary_crossentropy', optimizer=optimizer)
@@ -96,41 +105,27 @@ y_decoder.compile(loss='binary_crossentropy', optimizer=optimizer)
 
 # reconstructor takes input_shape and outputs input_shape
 x = tf.keras.Input(shape=input_shape)
+y = tf.keras.Input(shape=input_shape)
+
 x_latent = x_encoder(x)
+y_latent = y_encoder(y)
+
 x_hat = x_decoder(x_latent)
+y_hat = y_decoder(y_latent)
+x_y_hat = y_decoder(x_latent)
+y_x_hat = x_decoder(y_latent)
 
 x_x_reconstructor = tf.keras.Model(x, x_hat)
-x_x_reconstructor.compile(loss='binary_crossentropy', optimizer=optimizer)
-x_x_reconstructor.summary()
-
-y = tf.keras.Input(shape=input_shape)
-y_latent = y_encoder(y)
-y_hat = y_decoder(y_latent)
+x_x_reconstructor.compile(loss=loss_function, optimizer=optimizer)
 
 y_y_reconstructor = tf.keras.Model(y, y_hat)
-y_y_reconstructor.compile(loss='binary_crossentropy', optimizer=optimizer)
-y_y_reconstructor.summary()
+y_y_reconstructor.compile(loss=loss_function, optimizer=optimizer)
 
-x2 = tf.keras.Input(shape=input_shape)
-x2_latent = x_encoder(x2)
-y2_hat = y_decoder(x2_latent)
+x_y_reconstructor = tf.keras.Model(x, x_y_hat)
+x_y_reconstructor.compile(loss=loss_function, optimizer=optimizer)
 
-x_y_reconstructor = tf.keras.Model(x2, y2_hat)
-x_y_reconstructor.compile(loss='binary_crossentropy', optimizer=optimizer)
-x_y_reconstructor.summary()
-
-y2 = tf.keras.Input(shape=input_shape)
-y2_latent = y_encoder(y2)
-x2_hat = x_decoder(y2_latent)
-
-y_x_reconstructor = tf.keras.Model(y2, x2_hat)
-y_x_reconstructor.compile(loss='binary_crossentropy', optimizer=optimizer)
-y_x_reconstructor.summary()
-
-
-batch_size = 100
-#half_batch = int(batch_size / 2)
-epochs = 100
+y_x_reconstructor = tf.keras.Model(y, y_x_hat)
+y_x_reconstructor.compile(loss=loss_function, optimizer=optimizer)
 
 losses = np.asarray([[], [], [], []])
 
@@ -146,90 +141,29 @@ for epoch in range(epochs):
         losses[2][-1] += x_y_reconstructor.train_on_batch(epoch_x, epoch_y)
         losses[3][-1] += y_x_reconstructor.train_on_batch(epoch_y, epoch_x)
 
-    # losses[0][-1] /= numBatches
-    # losses[1][-1] /= numBatches
-    # losses[2][-1] /= numBatches
-    # losses[3][-1] /= numBatches
-
     losses[:, -1] /= numBatches
     # Plot the progress
     print ("%d [x_x loss: %f] [y_y_loss: %f] [x_y_loss: %f] [y_x_loss: %f]" % (epoch, losses[0][-1], losses[1][-1], losses[2][-1], losses[3][-1]))
-    utils.general.plotLosses(losses, ['x_x', 'y_y', 'x_y', 'y_x'], 'losses', 'losses.png')
-    #print ("%d [D loss: %f, acc.: %.2f%%] [C loss: %f] [R loss: %f]" % (epoch, total_d_loss, 100*total_acc_loss, total_c_loss, total_r_loss))
+    utils.general.plotLosses(losses, ['x_x', 'y_y', 'x_y', 'y_x'], 'losses', debugPath + 'losses.png')
 
-    ###### Test the trained model: continuous latent space ######
-    n = 40
-    minRange = -4
-    maxRange = 4
-    x = np.linspace(minRange, maxRange, n)
-    y = np.linspace(minRange, maxRange, n)
+    utils.general.saveLatentSamplingImage(x_decoder, latent_dim, debugPath + 'samplingX' + str(epoch) + '.png', title='X Sampling latent space', n=40, minRange=-4, maxRange=4)
+    utils.general.saveLatentSamplingImage(y_decoder, latent_dim, debugPath + 'samplingY' + str(epoch) + '.png', title='Y Sampling latent space', n=40, minRange=-4, maxRange=4)
 
-    I_latent_x = np.empty((28 * n, 28 * n))
-    I_latent_y = np.empty((28 * n, 28 * n))
-    num_extra_latent = latent_dim - 2
-    extra_dim = []
-    if num_extra_latent > 0:
-        extra_dim = [0] * num_extra_latent
-    for i, yi in enumerate(x):
-        for j, xi in enumerate(y):
-            # dim = [xi, yi] * int(LATENT_DIM/2)
-            dim = np.concatenate(([xi, yi], extra_dim))
-            z = np.array([dim])
-            x_hat = x_decoder.predict(z)
-            I_latent_x[(n - i - 1) * 28:(n - i) * 28, j * 28:(j + 1) * 28] = x_hat[0].reshape(28, 28)
-            y_hat = y_decoder.predict(z)
-            I_latent_y[(n - i - 1) * 28:(n - i) * 28, j * 28:(j + 1) * 28] = y_hat[0].reshape(28, 28)
+    doPCA = latent_dim > 2
+    x_z = x_encoder.predict(xvalidate)
+    y_z = y_encoder.predict(yvalidate)
+    if doPCA:
+        print('Doing PCA')
+        x_z = PCA(n_components=2).fit_transform(x_z)
+        y_z = PCA(n_components=2).fit_transform(y_z)
 
-    fig = plt.figure(num=None, figsize=(6.4, 4.8), dpi=int(n * 28 / 2))
-    plt.imshow(I_latent_x, vmin=0, vmax=1, cmap="Greys")
-    plt.xticks((0, n * 28), (minRange, maxRange))
-    plt.yticks((0, n * 28), (maxRange, minRange))
-    plt.xlabel(r'$\mu_0$')
-    plt.ylabel(r'$\mu_1$')
-    plt.title('Sampling latent space across first two variables (others set to 0)')
-    plt.savefig('latentx' + str(epoch) + '.png', bbox_inches='tight')
-    plt.close(fig)
+    min1 = min(np.amin(x_z[:,0]), np.amin(y_z[:,0]))
+    max1 = max(np.amax(x_z[:,0]), np.amax(y_z[:,0]))
+    min2 = min(np.amin(x_z[:,1]), np.amin(y_z[:,1]))
+    max2 = max(np.amax(x_z[:,1]), np.amax(y_z[:,1]))
 
-    fig = plt.figure(num=None, figsize=(6.4, 4.8), dpi=int(n * 28 / 2))
-    plt.imshow(I_latent_y, vmin=0, vmax=1, cmap="Greys")
-    plt.xticks((0, n * 28), (minRange, maxRange))
-    plt.yticks((0, n * 28), (maxRange, minRange))
-    plt.xlabel(r'$\mu_0$')
-    plt.ylabel(r'$\mu_1$')
-    plt.title('Sampling latent space across first two variables (others set to 0)')
-    plt.savefig('latenty' + str(epoch) + '.png', bbox_inches='tight')
-    plt.close(fig)
+    border = 0.1
+    limits = [min1 - border, max1 + border, min2 - border, max2 + border]
 
-    ###### Test the trained model: transformation plot only mu ######
-    z = x_encoder.predict(xvalidate)
-    if latent_dim > 2:
-        print('doing PCA')
-        z = PCA(n_components=2).fit_transform(z)
-
-    fig, ax = plt.subplots()
-    s = ax.scatter(z[:, 0], z[:, 1], s=4, c=xvalidatelabels, alpha=0.5, cmap='tab10')
-    ax.set_xlabel(r'$\mu_0$')
-    ax.set_ylabel(r'$\mu_1$')
-    ax.set_title(r'Latent $\mu_0$ and $\mu_1$ for 10000 validation images')
-    fig.colorbar(s, ax=ax)
-    ax.grid()
-    fig.savefig('transformedx' + str(epoch) + '.png', bbox_inches='tight')
-    plt.close(fig)
-
-    z = y_encoder.predict(yvalidate)
-    if latent_dim > 2:
-        print('doing PCA')
-        z = PCA(n_components=2).fit_transform(z)
-
-    fig, ax = plt.subplots()
-    s = ax.scatter(z[:, 0], z[:, 1], s=3, c=xvalidatelabels, alpha=0.5, cmap='tab10')
-    ax.set_xlabel(r'$\mu_0$')
-    ax.set_ylabel(r'$\mu_1$')
-    ax.set_title(r'Latent $\mu_0$ and $\mu_1$ for 10000 validation images')
-    fig.colorbar(s, ax=ax)
-    ax.grid()
-    fig.savefig('transformedy' + str(epoch) + '.png', bbox_inches='tight')
-    plt.close(fig)
-
-
-
+    utils.general.saveLatentSpaceImage(x_z, xvalidatelabels, debugPath + 'latentSpaceX' + str(epoch) + '.png', title=r'Latent $\mu_0$ and $\mu_1$ for ' + str(xvalidate.shape[0]) + ' X validation images', doPCA=doPCA, limits=limits)
+    utils.general.saveLatentSpaceImage(y_z, xvalidatelabels, debugPath + 'latentSpaceY' + str(epoch) + '.png', title=r'Latent $\mu_0$ and $\mu_1$ for ' + str(yvalidate.shape[0]) + ' Y validation images', doPCA=doPCA, limits=limits)

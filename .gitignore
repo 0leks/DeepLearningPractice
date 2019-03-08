@@ -1,6 +1,6 @@
 Interpreters/
 datasets/
-test_runs/
+UsingTensorflow1/test_runs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
