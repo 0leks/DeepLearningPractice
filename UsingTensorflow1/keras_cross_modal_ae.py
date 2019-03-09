@@ -15,7 +15,7 @@ import utils.general
 useFashionDataset = True
 useConvEncoder = True
 useConvDecoder = useConvEncoder
-latent_dim = 2
+latent_dim = 32
 outerConvLayerDim = 8
 innerConvLayerDim = 16
 outerDenseLayerDim = 512
@@ -52,14 +52,17 @@ def build_encoder():
 
     if useConvEncoder:
         model.add(tf.keras.layers.Conv2D(outerConvLayerDim, (3, 3), padding='same', activation='relu', input_shape=input_shape))
+        model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
         model.add(tf.keras.layers.Conv2D(innerConvLayerDim, (3, 3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
         model.add(tf.keras.layers.Flatten())
     else:
         model.add(tf.keras.layers.Flatten(input_shape=input_shape))
 
     model.add(tf.keras.layers.Dense(outerDenseLayerDim, activation='relu'))
+    model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.Dense(innerDenseLayerDim, activation='relu'))
     model.add(tf.keras.layers.Dense(latent_dim))
     model.summary()
@@ -75,13 +78,17 @@ def build_decoder():
     model = tf.keras.Sequential()
 
     model.add(tf.keras.layers.Dense(innerDenseLayerDim, activation='relu', input_shape=latent_shape))
+    model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.Dense(outerDenseLayerDim, activation='relu'))
+    model.add(tf.keras.layers.BatchNormalization())
 
     if useConvDecoder:
         model.add(tf.keras.layers.Dense(7 * 7 * innerConvLayerDim, activation='relu'))
+        model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.Reshape((7, 7, innerConvLayerDim)))
         model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
         model.add(tf.keras.layers.Conv2D(outerConvLayerDim, (3, 3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
         model.add(tf.keras.layers.Conv2D(1, (3,3), padding='same', activation='sigmoid'))
     else:
