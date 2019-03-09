@@ -1,3 +1,7 @@
+Interpreters/
+datasets/
+UsingTensorflow1/test_runs/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -110,3 +114,13 @@ MNIST_VAE_noeager_conv/\.idea/MNIST_VAE_noeager\.iml
 MNIST_VAE_noeager_conv/\.idea/misc\.xml
 
 MNIST_VAE_noeager_conv/\.idea/codeStyles/codeStyleConfig\.xml
+
+AdversarialAutoEncoder/\.idea/workspace\.xml
+
+UsingTensorflow1/\.idea/misc\.xml
+
+UsingTensorflow1/\.idea/UsingTensorflow1\.iml
+
+UsingTensorflow1/\.idea/workspace\.xml
+
+UsingTensorflow1/\.idea/modules\.xml

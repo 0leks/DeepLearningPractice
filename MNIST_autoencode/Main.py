@@ -2,6 +2,8 @@ import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 
+print('tensorflow version:', tf.__version__)
+
 # from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
 # from tensorflow.keras.models import Model
 
@@ -83,16 +85,14 @@ class Autoencoder(object):
     decoded_image = self._session.run(self._output_layer, feed_dict={self._input_layer: [image]})
     return decoded_image
 
-
-
 (x_train, _), (x_test, _) = tf.keras.datasets.fashion_mnist.load_data()
 
 print(x_train.shape)
 print(x_test.shape)
 
 # Prepare input
-x_train = x_train.astype('float32') / 255.
-x_test = x_test.astype('float32') / 255.
+x_train = (x_train.astype('float32')-127.5)/127.5
+x_test = (x_test.astype('float32')-127.5)/127.5
 x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
 x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
 
