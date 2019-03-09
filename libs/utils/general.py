@@ -4,7 +4,6 @@ import os
 import matplotlib
 matplotlib.use('Agg') # Allows generating plots without popup. Must call before importing pyplot.
 import matplotlib.pyplot as plt
-
 # turns off interactive mode for pyplot
 plt.ioff()
 
@@ -37,6 +36,7 @@ def plotLosses(lossArrays, lossLabels, title, filePath):
     plt.savefig(filePath)
     plt.close()
 
+
 def saveImage(image, filePath):
     plt.figure()
     plt.imshow(image, vmin=0, vmax=1, cmap='gray')
@@ -45,19 +45,24 @@ def saveImage(image, filePath):
     plt.savefig(filePath, bbox_inches='tight')
     plt.close()
 
+
 def saveLatentSpaceImage(z, labels, filePath, title='Latent Space', doPCA=False, limits=None):
     fig, ax = plt.subplots()
     if limits is not None:
         plt.xlim(limits[0], limits[1])
         plt.ylim(limits[2], limits[3])
-    s = ax.scatter(z[:, 0], z[:, 1], s=3, c=labels, alpha=0.5, cmap='tab10')
+    s = ax.scatter(z[:, 0], z[:, 1], s=1, c=labels, alpha=0.7, cmap='tab10')
     ax.set_xlabel(r'$\mu_0$')
     ax.set_ylabel(r'$\mu_1$')
     ax.set_title(title)
-    fig.colorbar(s, ax=ax)
+    ticks = np.arange(10)*8/9 + 0.5
+    cbar = fig.colorbar(s, ax=ax, ticks=ticks)
+    class_names = ['T-shirt', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+    cbar.ax.set_yticklabels(class_names)
     ax.grid()
     fig.savefig(filePath, bbox_inches='tight')
     plt.close(fig)
+
 
 def saveLatentSamplingImage(decoder, latent_dim, filePath, title='Sampling latent space acrod first two variables (others set to 0)', n=40, minRange=-4, maxRange=4):
     x = np.linspace(minRange, maxRange, n)
@@ -97,7 +102,14 @@ def saveReconstructionImages(images, filePath):
     plt.imshow(reconstructed, cmap='gray')
     hat = '\u0302'
     arrow = '\u2192'
-    plt.xticks((np.arange(6) + 0.5)*28, ('x', 'x' + arrow + 'x\u0302', 'y' + arrow + 'x\u0302', 'y', 'x' + arrow + 'y\u0302', 'y' + arrow + 'y\u0302'), rotation=-90)
+    labels = (
+            'x', 
+            'x' + arrow + 'x' + hat, 
+            'y' + arrow + 'x' + hat, 
+            'y', 
+            'x' + arrow + 'y' + hat, 
+            'y' + arrow + 'y' + hat)
+    plt.xticks((np.arange(6) + 0.5)*28, labels, rotation=-90)
     plt.yticks([])
     plt.title('Reconstructed validation images')
     plt.savefig(filePath)
