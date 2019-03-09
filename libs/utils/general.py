@@ -39,7 +39,7 @@ def plotLosses(lossArrays, lossLabels, title, filePath):
 
 def saveImage(image, filePath):
     plt.figure()
-    plt.imshow(image, vmin=0, vmax=1, cmap='Greys')
+    plt.imshow(image, vmin=0, vmax=1, cmap='gray')
     plt.xticks([])
     plt.yticks([])
     plt.savefig(filePath, bbox_inches='tight')
@@ -77,11 +77,28 @@ def saveLatentSamplingImage(decoder, latent_dim, filePath, title='Sampling laten
             I_latent[(n - i - 1) * 28:(n - i) * 28, j * 28:(j + 1) * 28] = x_hat[0].reshape(28, 28)
 
     fig = plt.figure(num=None, figsize=(6.4, 4.8), dpi=int(n * 28 / 2))
-    plt.imshow(I_latent, vmin=0, vmax=1, cmap="Greys")
+    plt.imshow(I_latent, vmin=0, vmax=1, cmap="gray")
     plt.xticks((0, n * 28), (minRange, maxRange))
     plt.yticks((0, n * 28), (maxRange, minRange))
     plt.xlabel(r'$\mu_0$')
     plt.ylabel(r'$\mu_1$')
     plt.title(title)
     plt.savefig(filePath, bbox_inches='tight')
+    plt.close(fig)
+
+
+def saveReconstructionImages(images, filePath):
+    columns = len(images)
+    rows = images[0].shape[0]
+    lines = np.concatenate(images, axis=2)
+    reconstructed = np.reshape(lines, (rows*28,columns*28))
+
+    fig = plt.figure(num=None, figsize=(6.4, 4.8), dpi=int(max(rows, columns) * 28))
+    plt.imshow(reconstructed, cmap='gray')
+    hat = '\u0302'
+    arrow = '\u2192'
+    plt.xticks((np.arange(6) + 0.5)*28, ('x', 'x' + arrow + 'x\u0302', 'y' + arrow + 'x\u0302', 'y', 'x' + arrow + 'y\u0302', 'y' + arrow + 'y\u0302'), rotation=-90)
+    plt.yticks([])
+    plt.title('Reconstructed validation images')
+    plt.savefig(filePath)
     plt.close(fig)
