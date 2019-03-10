@@ -12,15 +12,15 @@ plt.ioff()
 import utils.data
 import utils.general
 
-useFashionDataset = True
+useFashionDataset = False
 useConvEncoder = True
 useConvDecoder = useConvEncoder
 latent_dim = 32
-outerConvLayerDim = 8
-innerConvLayerDim = 16
+outerConvLayerDim = 16
+innerConvLayerDim = 32
 outerDenseLayerDim = 512
 innerDenseLayerDim = 256
-batch_size = 100
+batch_size = 250
 epochs = 200
 
 runTitle = 'XModal_'
@@ -52,11 +52,13 @@ def build_encoder():
 
     if useConvEncoder:
         model.add(tf.keras.layers.Conv2D(outerConvLayerDim, (3, 3), padding='same', activation='relu', input_shape=input_shape))
-        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.Conv2D(outerConvLayerDim, (3, 3), padding='same', activation='relu'))
         model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+        model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.Conv2D(innerConvLayerDim, (3, 3), padding='same', activation='relu'))
-        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.Conv2D(innerConvLayerDim, (3, 3), padding='same', activation='relu'))
         model.add(tf.keras.layers.MaxPool2D(pool_size=(2, 2)))
+        model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.Flatten())
     else:
         model.add(tf.keras.layers.Flatten(input_shape=input_shape))
@@ -87,10 +89,14 @@ def build_decoder():
         model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.Reshape((7, 7, innerConvLayerDim)))
         model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
-        model.add(tf.keras.layers.Conv2D(outerConvLayerDim, (3, 3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.Conv2D(innerConvLayerDim, (3, 3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.Conv2D(innerConvLayerDim, (3, 3), padding='same', activation='relu'))
         model.add(tf.keras.layers.BatchNormalization())
         model.add(tf.keras.layers.UpSampling2D((2, 2), interpolation='bilinear'))
-        model.add(tf.keras.layers.Conv2D(1, (3,3), padding='same', activation='sigmoid'))
+        model.add(tf.keras.layers.Conv2D(outerConvLayerDim, (3, 3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.Conv2D(outerConvLayerDim, (3, 3), padding='same', activation='relu'))
+        model.add(tf.keras.layers.BatchNormalization())
+        model.add(tf.keras.layers.Conv2D(1, (3, 3), padding='same', activation='sigmoid'))
     else:
         model.add(tf.keras.layers.Dense(np.product(input_shape), activation='sigmoid'))
 
@@ -143,7 +149,6 @@ y_x_reconstructor = tf.keras.Model(y, y_x_hat)
 y_x_reconstructor.compile(loss=loss_function, optimizer=optimizer)
 
 losses = np.asarray([[], [], [], []])
-
 numBatches = int(xtrain.shape[0]/batch_size)
 for epoch in range(epochs):
     losses = np.append(losses, [[0], [0], [0], [0]], axis=1)
@@ -164,8 +169,8 @@ for epoch in range(epochs):
     print ("%d [x_x loss: %f] [y_y_loss: %f] [x_y_loss: %f] [y_x_loss: %f] [%.1f seconds]" % (epoch, losses[0][-1], losses[1][-1], losses[2][-1], losses[3][-1], deltaTime_s))
     utils.general.plotLosses(losses, ['x_x', 'y_y', 'x_y', 'y_x'], 'losses', debugPath + 'losses.png')
 
-    utils.general.saveLatentSamplingImage(x_decoder, latent_dim, debugPath + 'samplingX' + str(epoch) + '.png', title='X Sampling latent space', n=40, minRange=-4, maxRange=4)
-    utils.general.saveLatentSamplingImage(y_decoder, latent_dim, debugPath + 'samplingY' + str(epoch) + '.png', title='Y Sampling latent space', n=40, minRange=-4, maxRange=4)
+    #utils.general.saveLatentSamplingImage(x_decoder, latent_dim, debugPath + 'samplingX' + str(epoch) + '.png', title='X Sampling latent space', n=40, minRange=-4, maxRange=4)
+    #utils.general.saveLatentSamplingImage(y_decoder, latent_dim, debugPath + 'samplingY' + str(epoch) + '.png', title='Y Sampling latent space', n=40, minRange=-4, maxRange=4)
 
     doPCA = latent_dim > 2
     x_z = x_encoder.predict(xvalidate)
@@ -209,3 +214,9 @@ for epoch in range(epochs):
         x_y_reconstructed,
         y_y_reconstructed
     ), debugPath + 'reconstructed' + str(epoch) + '.png')
+
+    utils.general.saveLatentSpaceTraverse(20, xvalidate, x_encoder, x_decoder, debugPath + 'latentTraverse' + str(epoch) + '.png', data2=yvalidate, decoder2=y_decoder)
+
+
+
+

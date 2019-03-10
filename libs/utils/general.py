@@ -114,3 +114,46 @@ def saveReconstructionImages(images, filePath):
     plt.title('Reconstructed validation images')
     plt.savefig(filePath)
     plt.close(fig)
+
+
+def saveLatentSpaceTraverse(n, data, encoder, decoder, filePath, data2=None, decoder2=None):
+    numSamples = int(n/2) if decoder2 is not None else n
+    idx = np.random.randint(data.shape[0], size=numSamples * 2)
+    randomImages = data[idx, :, :, :]
+    randomImages2 = data2[idx, :, :, :] if data2 is not None else randomImages
+    interpValues = np.arange(0, 1 + 1 / n, 1 / n)
+    final_output = []
+    for i in range(numSamples):
+        start = randomImages[2 * i:2 * i + 1, :, :, :]
+        end = randomImages[2 * i + 1:2 * i + 2, :, :, :]
+
+        start_z = encoder.predict(start)
+        end_z = encoder.predict(end)
+
+        interp = [np.multiply(start_z, 1 - t) + np.multiply(end_z, t) for t in interpValues]
+        interp = np.concatenate(interp)
+        output = decoder.predict(interp)
+        output = np.concatenate((start, output, end), axis=0)
+        output = np.reshape(output, output.shape[:-1])
+        line = np.concatenate(output, axis=1)
+        final_output.append(line)
+        if decoder2 is not None:
+            start2 = randomImages2[2 * i:2 * i + 1, :, :, :]
+            end2 = randomImages2[2 * i + 1:2 * i + 2, :, :, :]
+            output = decoder2.predict(interp)
+            output = np.concatenate((start2, output, end2), axis=0)
+            output = np.reshape(output, output.shape[:-1])
+            line = np.concatenate(output, axis=1)
+            final_output.append(line)
+
+    final_output = np.asarray(final_output)
+    final_output = np.concatenate(final_output, axis=0)
+    fig = plt.figure(num=None, figsize=(6.4, 4.8), dpi=int(n * 28))
+    plt.imshow(final_output, vmin=0, vmax=1, cmap="gray")
+    labels = ['%.2f' % value for value in interpValues]
+    labels = np.concatenate((['Original'], labels, ['Original']), axis=0)
+    plt.xticks((np.arange(n + 3) + 0.5)*28, labels, rotation=-90)
+    plt.yticks([])
+    plt.title('Interpolation in Latent Space z')
+    plt.savefig(filePath, bbox_inches='tight')
+    plt.close(fig)
