@@ -158,10 +158,8 @@ for epoch in range(epochs):
 
         # The generator wants the discriminator to label the generated samples
         # as valid (ones)
-        valid_y = np.array([0] * batch_size)
-
         # Train the generator
-        c_loss = combined.train_on_batch(epoch_x, valid_y)
+        c_loss = combined.train_on_batch(epoch_x, np.ones((batch_size, 1)))
 
         # ---------------------
         #  Train Encode / Decode
