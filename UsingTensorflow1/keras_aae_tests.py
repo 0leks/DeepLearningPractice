@@ -52,7 +52,9 @@ d_losses = []
 c_losses = []
 r_losses = []
 numBatches = int(xtrain.shape[0]/batch_size)
-val_losses = []*3
+val_reconstruction = []
+val_accuracy = []
+val_disc_loss = []
 for epoch in range(epochs):
     total_d_loss = 0
     total_acc_loss = 0
@@ -94,6 +96,19 @@ for epoch in range(epochs):
         total_acc_loss += d_loss[1]
         total_c_loss += c_loss
         total_r_loss += r_loss
+
+    val_eval = reconstructor.evaluate(xvalidate, xvalidate)
+    print(val_eval)
+    val_disc_eval = combined.evaluate(xvalidate, np.ones((xvalidate.shape[0], 1))
+    print(val_disc_eval)
+
+    val_reconstruction.append(val_eval)
+    val_accuracy.append(val_disc_eval[1])
+    val_disc_loss.append(val_disc_eval[0])
+    print ("%d Validation [Disc loss: %f, acc.: %.2f%%] [Recon loss: %f]" % (epoch, val_disc_eval[0], 100*val_disc_eval[1], val_eval))
+    utils.general.plotLosses([val_reconstruction, val_accuracy, val_disc_loss], ['Recon loss', 'Disc Accuracy', 'Disc loss'], 'AAE validation losses', debugPath + 'AAE_validation_losses' + str(epoch) + '.png')
+
+
 
     total_d_loss /= numBatches
     total_acc_loss /= numBatches
