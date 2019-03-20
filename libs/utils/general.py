@@ -1,11 +1,26 @@
 import tensorflow as tf
 import numpy as np
+import math
 import os
 import matplotlib
 matplotlib.use('Agg') # Allows generating plots without popup. Must call before importing pyplot.
 import matplotlib.pyplot as plt
 # turns off interactive mode for pyplot
 plt.ioff()
+
+
+# assumed latent_dim = 2
+def sampleFromCircleGaussians(batch_size, num_gaussian, radius, stddev):
+    noise = np.random.normal(0, stddev, (batch_size, 2))
+    selectedGaussian = np.random.randint(0, num_gaussian, (batch_size))
+    angle = selectedGaussian * 2 * math.pi / num_gaussian
+    x = radius*np.cos(angle)
+    y = radius*np.sin(angle)
+    x = np.expand_dims(x, axis=1)
+    y = np.expand_dims(y, axis=1)
+    centers = np.concatenate((x, y), axis=1)
+    combined = noise + centers
+    return combined
 
 
 def createDirectory(path):
@@ -46,7 +61,7 @@ def saveImage(image, filePath):
     plt.close()
 
 
-def saveLatentSpaceImage(z, labels, filePath, title='Latent Space', doPCA=False, limits=None):
+def saveLatentSpaceImage(z, labels, filePath, title='Latent Space', doPCA=False, limits=None, mnist_fashion=True):
     fig, ax = plt.subplots()
     if limits is not None:
         plt.xlim(limits[0], limits[1])
@@ -58,6 +73,8 @@ def saveLatentSpaceImage(z, labels, filePath, title='Latent Space', doPCA=False,
     ticks = np.arange(10)*8/9 + 0.5
     cbar = fig.colorbar(s, ax=ax, ticks=ticks)
     class_names = ['T-shirt', 'Trouser', 'Pullover', 'Dress', 'Coat', 'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+    if not mnist_fashion:
+        class_names = np.arange(10)
     cbar.ax.set_yticklabels(class_names)
     ax.grid()
     fig.savefig(filePath, bbox_inches='tight')

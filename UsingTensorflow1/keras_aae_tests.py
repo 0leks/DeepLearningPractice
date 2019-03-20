@@ -5,21 +5,26 @@ from sklearn.decomposition import PCA
 
 import matplotlib
 matplotlib.use('Agg') # Allows generating plots without popup. Must call before importing pyplot.
-import matplotlib.pyplot as plt
 
 import utils.data
 import utils.general
 
 
 useDeepNetwork = True
-
 useFashionDataset = False
-latent_dim = 8
+useCircleGaussian = False
+num_gaussian = 10
+circle_gaussian_radius = 10
+gaussian_stddev = 5
+latent_dim = 2
 batch_size = 100
 epochs = 200
 
+
 runTitle = 'AAE_tests_'
 runTitle += ('Fashion' if useFashionDataset else 'Digits') + '_'
+runTitle += ('Deep_' if useDeepNetwork else '')
+runTitle += ('CircleGaussian' + str(num_gaussian) + 'R' + str(circle_gaussian_radius) + '_' if useCircleGaussian else '')
 runTitle += 'Latent' + str(latent_dim)
 
 debugPath = utils.general.setupDebugPath('test_runs', runTitle)
@@ -91,6 +96,7 @@ def build_discriminator():
 
     return tf.keras.Model(latent, validity)
 
+
 # TODO try out different learning rates
 # TODO maybe also different optimizer
 optimizer = tf.train.AdamOptimizer(0.0002)
@@ -127,6 +133,7 @@ d_losses = []
 c_losses = []
 r_losses = []
 numBatches = int(xtrain.shape[0]/batch_size)
+val_losses = []*3
 for epoch in range(epochs):
     total_d_loss = 0
     total_acc_loss = 0
@@ -142,7 +149,9 @@ for epoch in range(epochs):
         z = encoder.predict(epoch_x)
         # TODO allow using different distribution here.
         # paper uses normal with deviation 5 for MNIST 
-        noise = np.random.normal(0, 5, (batch_size, latent_dim))
+        noise = np.random.normal(0, gaussian_stddev, (batch_size, latent_dim))
+        if useCircleGaussian:
+            noise = utils.general.sampleFromCircleGaussians(batch_size, num_gaussian, circle_gaussian_radius, gaussian_stddev)
         # The noise signal should be marked valid (1) by the discriminator
         d_loss_real = discriminator.train_on_batch(noise, np.ones((batch_size, 1)))
         # The encoded samples should be marked fake (0) by the discriminator
@@ -177,10 +186,6 @@ for epoch in range(epochs):
     r_losses.append(total_r_loss)
     # Plot the progress
     print ("%d [Disc loss: %f, acc.: %.2f%%] [Gen loss: %f] [Recon loss: %f]" % (epoch, total_d_loss, 100*total_acc_loss, total_c_loss, total_r_loss))
-
-    utils.general.plotLosses([d_losses], ['d_loss'], 'AAE losses', debugPath + 'AAE_d_losses' + str(epoch) + '.png')
-    utils.general.plotLosses([c_losses], ['c_loss'], 'AAE losses', debugPath + 'AAE_c_losses' + str(epoch) + '.png')
-    utils.general.plotLosses([r_losses], ['r_loss'], 'AAE losses', debugPath + 'AAE_r_losses' + str(epoch) + '.png')
     utils.general.plotLosses([d_losses, c_losses, r_losses], ['Disc loss', 'Gen loss', 'Recon loss'], 'AAE losses', debugPath + 'AAE_losses' + str(epoch) + '.png')
 
     doPCA = latent_dim > 2
@@ -188,9 +193,31 @@ for epoch in range(epochs):
     # TODO Shireen recommended some algo other than PCA because it preserves neighborhoods
     z = PCA(n_components=2).fit_transform(z) if doPCA else z
 
-    utils.general.saveLatentSpaceImage(z, xvalidatelabels, debugPath + 'latentSpace' + str(epoch) + '.png', title=r'Latent $\mu_0$ and $\mu_1$ for ' + str(xvalidate.shape[0]) + ' X validation images', doPCA=doPCA)
+    maximum = circle_gaussian_radius + gaussian_stddev + 5
+    utils.general.saveLatentSpaceImage(z,
+                                       xvalidatelabels,
+                                       debugPath + 'latentSpace' + str(epoch) + '.png',
+                                       title=r'Latent $\mu_0$ and $\mu_1$ for ' + str(xvalidate.shape[0]) + ' X validation images',
+                                       doPCA=doPCA,
+                                       limits=[-maximum, maximum, -maximum, maximum],
+                                       mnist_fashion=useFashionDataset)
     
     # TODO implement find nearest image in training data (using euclidian distance)
 
     # TODO demonstrate image reconstruction with x, x_hat, and nearest to x in training data
-    
+
+    n = 5
+    x_batch = xvalidate[:n, :, :, :]
+    idx = np.random.randint(xvalidate.shape[0], size=n)
+    x_batch2 = xvalidate[idx, :, :, :]
+
+    x_batch = np.concatenate((x_batch, x_batch2), axis=0)
+
+    x_reconstructed = reconstructor.predict(x_batch)
+
+    utils.general.saveReconstructionImages((
+        x_batch,
+        x_reconstructed,
+    ), debugPath + 'reconstructed' + str(epoch) + '.png')
+
+    utils.general.saveLatentSpaceTraverse(20, xvalidate, encoder, decoder, debugPath + 'latentTraverse' + str(epoch) + '.png')
