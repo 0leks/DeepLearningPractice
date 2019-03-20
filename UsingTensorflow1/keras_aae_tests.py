@@ -8,9 +8,10 @@ matplotlib.use('Agg') # Allows generating plots without popup. Must call before 
 
 import utils.data
 import utils.general
+import utils.models
 
 
-useDeepNetwork = True
+useDeepNetwork = False
 useFashionDataset = False
 useCircleGaussian = False
 num_gaussian = 10
@@ -34,100 +35,18 @@ if useFashionDataset:
 else:
     (xtrain, xtrainlabels), (xvalidate, xvalidatelabels) = utils.data.getMNISTdatasetClassification(validation_ratio=1/6)
 
-# x to 1000 relu to 1000 relu to 8 linear z
-# z to 1000 relu to 1000 relu to 28x28 sigmoid output x_hat
-# z to 1000 relu to 1000 relu to 1 sigmoid D
-
-input_shape = (28, 28, 1)
+input_shape = xtrain[0].shape
 output_dim = np.prod(input_shape)
-latent_shape = (latent_dim,)
-
-def build_encoder():
-
-    model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Flatten(input_shape=input_shape))
-    model.add(tf.keras.layers.Dense(1000, activation='relu'))
-    model.add(tf.keras.layers.Dense(1000, activation='relu'))
-    if useDeepNetwork:
-        model.add(tf.keras.layers.Dense(1000, activation='relu'))
-        model.add(tf.keras.layers.Dense(1000, activation='relu'))
-    model.add(tf.keras.layers.Dense(latent_dim))
-    model.summary()
-
-    img = tf.keras.Input(shape=input_shape)
-    encoded = model(img)
-
-    return tf.keras.Model(img, encoded)
-
-
-def build_decoder():
-
-    model = tf.keras.Sequential()
-
-    model.add(tf.keras.layers.Dense(1000, activation='relu', input_shape=latent_shape))
-    model.add(tf.keras.layers.Dense(1000, activation='relu'))
-    if useDeepNetwork:
-        model.add(tf.keras.layers.Dense(1000, activation='relu'))
-        model.add(tf.keras.layers.Dense(1000, activation='relu'))
-    model.add(tf.keras.layers.Dense(np.product(input_shape), activation='sigmoid'))
-    model.add(tf.keras.layers.Reshape(input_shape))
-    model.summary()
-
-    latent = tf.keras.Input(shape=latent_shape)
-    decoded = model(latent)
-
-    return tf.keras.Model(latent, decoded)
-
-
-def build_discriminator():
-
-    model = tf.keras.Sequential()
-
-    model.add(tf.keras.layers.Dense(1000, activation='relu', input_shape=latent_shape))
-    model.add(tf.keras.layers.Dense(1000, activation='relu'))
-    if useDeepNetwork:
-        model.add(tf.keras.layers.Dense(1000, activation='relu'))
-        model.add(tf.keras.layers.Dense(1000, activation='relu'))
-    model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
-    model.summary()
-
-    latent = tf.keras.Input(shape=latent_shape)
-    validity = model(latent)
-
-    return tf.keras.Model(latent, validity)
-
 
 # TODO try out different learning rates
 # TODO maybe also different optimizer
+# TODO is binary cross entropy the right loss function for this?
+# TODO the paper uses euclidian distance for reconstruction loss
 optimizer = tf.train.AdamOptimizer(0.0002)
 
-discriminator = build_discriminator()
-# TODO is binary cross entropy the right loss function for this?
-discriminator.compile(loss='binary_crossentropy', optimizer=optimizer, metrics=['accuracy'])
+layer_sizes = [1000, 1000, 1000, 1000] if useDeepNetwork else [1000, 1000]
 
-encoder = build_encoder()
-encoder.compile(loss='binary_crossentropy', optimizer=optimizer)
-
-decoder = build_decoder()
-decoder.compile(loss='binary_crossentropy', optimizer=optimizer)
-
-# reconstructor takes input_shape and outputs input_shape
-x = tf.keras.Input(shape=input_shape)
-latent = encoder(x)
-
-x_hat = decoder(latent)
-
-reconstructor = tf.keras.Model(x, x_hat)
-reconstructor.summary()
-# TODO the paper uses euclidian distance
-reconstructor.compile(loss='binary_crossentropy', optimizer=optimizer)
-
-discriminator.trainable = False
-valid = discriminator(latent)
-
-combined = tf.keras.Model(x, valid)
-combined.summary()
-combined.compile(loss='binary_crossentropy', optimizer=optimizer)
+encoder, decoder, discriminator, reconstructor, combined = utils.models.makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 'binary_crossentropy')
 
 d_losses = []
 c_losses = []

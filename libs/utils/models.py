@@ -1,12 +1,131 @@
 import tensorflow as tf
+import numpy as np
+
 
 def makeDenseClassifierModel(input_shape, layer_sizes):
-  model = tf.keras.Sequential()
-  model.add(tf.keras.layers.Flatten(input_shape=input_shape))
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Flatten(input_shape=input_shape))
 
-  for layer in layer_sizes[:-1]:
-    print('layer:', layer)
-    model.add(tf.keras.layers.Dense(layer, activation=tf.nn.relu))
+    for layer in layer_sizes[:-1]:
+        print('layer:', layer)
+        model.add(tf.keras.layers.Dense(layer, activation=tf.nn.relu))
 
-  model.add(tf.keras.layers.Dense(layer_sizes[-1], activation=tf.nn.softmax))
-  return model
+    model.add(tf.keras.layers.Dense(layer_sizes[-1], activation=tf.nn.softmax))
+    return model
+
+
+def buildEncoder(input_shape, layer_sizes, latent_dim):
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Flatten(input_shape=input_shape))
+    for layer in layer_sizes:
+        model.add(tf.keras.layers.Dense(layer, activation='relu'))
+    model.add(tf.keras.layers.Dense(latent_dim))
+    model.summary()
+
+    img = tf.keras.Input(shape=input_shape)
+    encoded = model(img)
+
+    return tf.keras.Model(img, encoded)
+
+
+def buildConvEncoder(input_shape, layer_sizes, latent_dim):
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Reshape(input_shape, input_shape=input_shape))
+    for layer in layer_sizes[:-1]:
+        model.add(tf.keras.layers.Conv2D(layer, (3, 3), activation='relu', padding='same'))
+        model.add(tf.keras.layers.MaxPooling2D((2, 2), padding='same'))
+
+    model.add(tf.keras.layers.Conv2D(layer_sizes[-1], (3, 3), activation='relu', padding='same'))
+    model.add(tf.keras.layers.Flatten())
+    model.summary()
+
+    img = tf.keras.Input(shape=input_shape)
+    encoded = model(img)
+
+    return tf.keras.Model(img, encoded)
+
+
+def buildDecoder(input_shape, layer_sizes, latent_dim):
+    latent_shape = (latent_dim,)
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Flatten(input_shape=latent_shape))
+    for layer in layer_sizes:
+        model.add(tf.keras.layers.Dense(layer, activation='relu'))
+    model.add(tf.keras.layers.Dense(np.product(input_shape), activation='sigmoid'))
+    model.add(tf.keras.layers.Reshape(input_shape))
+    model.summary()
+
+    latent = tf.keras.Input(shape=latent_shape)
+    decoded = model(latent)
+
+    return tf.keras.Model(latent, decoded)
+
+
+def Resize2DBilinear(size):
+    return tf.keras.layers.Lambda(lambda image: tf.image.resize_bilinear(image, size, align_corners=True))
+
+
+def buildConvDecoder(input_shape, layer_filters, layer_sizes, latent_dim):
+    latent_shape = (latent_dim,)
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Reshape([1, 1, latent_dim], input_shape=latent_shape))
+    for num_filters, image_size in zip(layer_filters[:-1], layer_sizes[:-1]):
+        model.add(tf.keras.layers.Conv2D(num_filters, (3, 3), activation='relu', padding='same'))
+        #model.add(tf.keras.layers.UpSampling2D((2, 2)))
+        model.add(Resize2DBilinear(image_size))
+
+    model.add(tf.keras.layers.Conv2D(layer_filters[-1], (3, 3), activation='relu', padding='same'))
+    model.add(Resize2DBilinear((28, 28)))
+    model.add(tf.keras.layers.Conv2D(1, (3, 3), activation='relu', padding='same'))
+    model.summary()
+
+    img = tf.keras.Input(shape=input_shape)
+    encoded = model(img)
+
+    return tf.keras.Model(img, encoded)
+
+
+def buildDiscriminator(layer_sizes, latent_dim):
+    latent_shape = (latent_dim,)
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Flatten(input_shape=latent_shape))
+    for layer in layer_sizes:
+        model.add(tf.keras.layers.Dense(layer, activation='relu'))
+    model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
+    model.summary()
+
+    latent = tf.keras.Input(shape=latent_shape)
+    validity = model(latent)
+
+    return tf.keras.Model(latent, validity)
+
+
+def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, loss_function):
+    discriminator = buildDiscriminator(layer_sizes, latent_dim)
+    discriminator.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+
+    encoder = buildEncoder(input_shape, layer_sizes, latent_dim)
+    encoder.compile(loss=loss_function, optimizer=optimizer)
+
+    buildConvEncoder(input_shape, [4, 8, 16, 32, 64, latent_dim], latent_dim)
+    buildConvDecoder(input_shape, [64, 32, 16, 8, 4], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
+
+    decoder = buildDecoder(input_shape, layer_sizes, latent_dim)
+    decoder.compile(loss=loss_function, optimizer=optimizer)
+
+    x = tf.keras.Input(shape=input_shape)
+    latent = encoder(x)
+    x_hat = decoder(latent)
+
+    reconstructor = tf.keras.Model(x, x_hat)
+    reconstructor.summary()
+    reconstructor.compile(loss=loss_function, optimizer=optimizer)
+
+    discriminator.trainable = False
+    valid = discriminator(latent)
+
+    combined = tf.keras.Model(x, valid)
+    combined.summary()
+    combined.compile(loss=loss_function, optimizer=optimizer)
+
+    return encoder, decoder, discriminator, reconstructor, combined
