@@ -35,7 +35,7 @@ def buildConvEncoder(input_shape, layer_sizes, latent_dim):
         model.add(tf.keras.layers.Conv2D(layer, (3, 3), activation='relu', padding='same'))
         model.add(tf.keras.layers.MaxPooling2D((2, 2), padding='same'))
 
-    model.add(tf.keras.layers.Conv2D(latent_dim, (3, 3), activation='relu', padding='same'))
+    model.add(tf.keras.layers.Conv2D(latent_dim, (1, 1), padding='same'))
     model.add(tf.keras.layers.Flatten())
     model.summary()
 
@@ -73,10 +73,10 @@ def buildConvDecoder(input_shape, layer_filters, layer_sizes, latent_dim):
         model.add(tf.keras.layers.Conv2D(num_filters, (3, 3), activation='relu', padding='same'))
         model.add(Resize2DBilinear(image_size))
 
-    model.add(tf.keras.layers.Conv2D(1, (3, 3), activation='relu', padding='same'))
+    model.add(tf.keras.layers.Conv2D(1, (3, 3), activation='sigmoid', padding='same'))
     model.summary()
 
-    img = tf.keras.Input(shape=input_shape)
+    img = tf.keras.Input(shape=latent_shape)
     encoded = model(img)
 
     return tf.keras.Model(img, encoded)
@@ -97,7 +97,7 @@ def buildDiscriminator(layer_sizes, latent_dim):
     return tf.keras.Model(latent, validity)
 
 
-def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, loss_function):
+def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, loss_function, use_conv):
     discriminator = buildDiscriminator(layer_sizes, latent_dim)
     discriminator.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
@@ -118,13 +118,14 @@ def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 
     # conv2d 28x28x1
     # x_hat
 
-    convDecoder = buildConvEncoder(input_shape, [4, 8, 16, 32, 64], latent_dim)
-    convEncoder = buildConvDecoder(input_shape, [64, 32, 16, 8, 4], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
+    if use_conv:
+        encoder = buildConvEncoder(input_shape, [4, 8, 16, 32, 64], latent_dim)
+        decoder = buildConvDecoder(input_shape, [64, 32, 16, 8, 4], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
+    else:
+        encoder = buildEncoder(input_shape, layer_sizes, latent_dim)
+        decoder = buildDecoder(input_shape, layer_sizes, latent_dim)
 
-    encoder = buildEncoder(input_shape, layer_sizes, latent_dim)
     encoder.compile(loss=loss_function, optimizer=optimizer)
-
-    decoder = buildDecoder(input_shape, layer_sizes, latent_dim)
     decoder.compile(loss=loss_function, optimizer=optimizer)
 
     x = tf.keras.Input(shape=input_shape)
