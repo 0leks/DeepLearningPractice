@@ -31,11 +31,11 @@ def buildEncoder(input_shape, layer_sizes, latent_dim):
 def buildConvEncoder(input_shape, layer_sizes, latent_dim):
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Reshape(input_shape, input_shape=input_shape))
-    for layer in layer_sizes[:-1]:
+    for layer in layer_sizes:
         model.add(tf.keras.layers.Conv2D(layer, (3, 3), activation='relu', padding='same'))
         model.add(tf.keras.layers.MaxPooling2D((2, 2), padding='same'))
 
-    model.add(tf.keras.layers.Conv2D(layer_sizes[-1], (3, 3), activation='relu', padding='same'))
+    model.add(tf.keras.layers.Conv2D(latent_dim, (3, 3), activation='relu', padding='same'))
     model.add(tf.keras.layers.Flatten())
     model.summary()
 
@@ -69,13 +69,10 @@ def buildConvDecoder(input_shape, layer_filters, layer_sizes, latent_dim):
     latent_shape = (latent_dim,)
     model = tf.keras.Sequential()
     model.add(tf.keras.layers.Reshape([1, 1, latent_dim], input_shape=latent_shape))
-    for num_filters, image_size in zip(layer_filters[:-1], layer_sizes[:-1]):
+    for num_filters, image_size in zip(layer_filters, layer_sizes):
         model.add(tf.keras.layers.Conv2D(num_filters, (3, 3), activation='relu', padding='same'))
-        #model.add(tf.keras.layers.UpSampling2D((2, 2)))
         model.add(Resize2DBilinear(image_size))
 
-    model.add(tf.keras.layers.Conv2D(layer_filters[-1], (3, 3), activation='relu', padding='same'))
-    model.add(Resize2DBilinear((28, 28)))
     model.add(tf.keras.layers.Conv2D(1, (3, 3), activation='relu', padding='same'))
     model.summary()
 
@@ -104,11 +101,28 @@ def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 
     discriminator = buildDiscriminator(layer_sizes, latent_dim)
     discriminator.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
 
+    # x
+    # 28x28x1 
+    # conv2d maxpool 14x14xF
+    # conv2d maxpool 7x7xF
+    # conv2d maxpool 4x4xF
+    # conv2d maxpool 2x2xF
+    # conv2d maxpool 1x1xF
+    # conv2d 1x1xZ
+    # z
+    # conv2d resize 2x2xF
+    # conv2d resize 4x4xF
+    # conv2d resize 7x7xF
+    # conv2d resize 14x14xF
+    # conv2d resize 28x28xF
+    # conv2d 28x28x1
+    # x_hat
+
+    convDecoder = buildConvEncoder(input_shape, [4, 8, 16, 32, 64], latent_dim)
+    convEncoder = buildConvDecoder(input_shape, [64, 32, 16, 8, 4], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
+
     encoder = buildEncoder(input_shape, layer_sizes, latent_dim)
     encoder.compile(loss=loss_function, optimizer=optimizer)
-
-    buildConvEncoder(input_shape, [4, 8, 16, 32, 64, latent_dim], latent_dim)
-    buildConvDecoder(input_shape, [64, 32, 16, 8, 4], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
 
     decoder = buildDecoder(input_shape, layer_sizes, latent_dim)
     decoder.compile(loss=loss_function, optimizer=optimizer)
