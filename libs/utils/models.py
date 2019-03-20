@@ -119,8 +119,9 @@ def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 
     # x_hat
 
     if use_conv:
-        encoder = buildConvEncoder(input_shape, [4, 8, 16, 32, 64], latent_dim)
-        decoder = buildConvDecoder(input_shape, [64, 32, 16, 8, 4], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
+        m = 2
+        encoder = buildConvEncoder(input_shape, [4*m, 8*m, 16*m, 32*m, 64*m], latent_dim)
+        decoder = buildConvDecoder(input_shape, [64*m, 32*m, 16*m, 8*m, 4*m], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
     else:
         encoder = buildEncoder(input_shape, layer_sizes, latent_dim)
         decoder = buildDecoder(input_shape, layer_sizes, latent_dim)
