@@ -14,12 +14,12 @@ import utils.models
 useDeepNetwork = False
 useFashionDataset = False
 useCircleGaussian = False
-useConvAutoEncoder = True
+useConvAutoEncoder = False
 num_gaussian = 10
 circle_gaussian_radius = 10
 gaussian_stddev = 5
 latent_dim = 2
-batch_size = 100
+batch_size = 64
 epochs = 200
 
 
@@ -48,7 +48,7 @@ optimizer = tf.train.AdamOptimizer(0.0002)
 
 layer_sizes = [1000, 1000, 1000, 1000] if useDeepNetwork else [1000, 1000]
 
-encoder, decoder, discriminator, reconstructor, combined = utils.models.makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 'binary_crossentropy', use_conv=useConvAutoEncoder)
+encoder, decoder, discriminator, reconstructor, combined = utils.models.makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 'mean_squared_error', 'binary_crossentropy', use_conv=useConvAutoEncoder)
 
 d_losses = []
 c_losses = []
@@ -57,6 +57,8 @@ numBatches = int(xtrain.shape[0]/batch_size)
 val_reconstruction = []
 val_accuracy = []
 val_disc_loss = []
+print('Saving to directory:', runTitle)
+print('Num Batches:', numBatches)
 for epoch in range(epochs):
     total_d_loss = 0
     total_acc_loss = 0
@@ -94,10 +96,11 @@ for epoch in range(epochs):
         # ---------------------
         r_loss = reconstructor.train_on_batch(epoch_x, epoch_x)
 
-        total_d_loss += d_loss[0]
+        total_d_loss += d_loss[0]/batch_size
         total_acc_loss += d_loss[1]
-        total_c_loss += c_loss
+        total_c_loss += c_loss/batch_size
         total_r_loss += r_loss
+        #print('reconstruction loss:', r_loss)
 
     total_d_loss /= numBatches
     total_acc_loss /= numBatches
@@ -107,17 +110,19 @@ for epoch in range(epochs):
     c_losses.append(total_c_loss)
     r_losses.append(total_r_loss)
 
-    val_eval = reconstructor.evaluate(xvalidate, xvalidate, verbose=0)
-    val_disc_eval = combined.evaluate(xvalidate, np.ones((xvalidate.shape[0], 1)), verbose=0)
+    val_eval = 0
+    #val_eval = reconstructor.evaluate(xvalidate, xvalidate, verbose=0)
+    val_disc_eval = 0
+    #val_disc_eval = combined.evaluate(xvalidate, np.ones((xvalidate.shape[0], 1)), verbose=0)
     val_reconstruction.append(val_eval)
     val_disc_loss.append(val_disc_eval)
 
-    # Plot the progress
     print ("%d [Disc loss: %f, acc.: %.2f%%] [Gen loss: %f] [Recon loss: %f]" % (epoch, total_d_loss, 100*total_acc_loss, total_c_loss, total_r_loss))
-    utils.general.plotLosses([d_losses, c_losses, r_losses], ['Disc loss', 'Gen loss', 'Recon loss'], 'AAE losses', debugPath + 'AAE_losses' + str(epoch) + '.png')
-
     print ("%d Validation [Disc loss: %f] [Recon loss: %f]" % (epoch, val_disc_eval, val_eval))
-    utils.general.plotLosses([val_reconstruction, val_disc_loss], ['Recon loss', 'Disc loss'], 'AAE validation losses', debugPath + 'AAE_validation_losses' + str(epoch) + '.png')
+    # Plot the progress
+    if epoch > 0:
+        utils.general.plotLosses([d_losses, c_losses, r_losses], ['Disc loss', 'Gen loss', 'Recon loss'], 'AAE losses', debugPath + 'AAE_losses' + str(epoch) + '.png')
+        utils.general.plotLosses([val_reconstruction, val_disc_loss], ['Recon loss', 'Disc loss'], 'AAE validation losses', debugPath + 'AAE_validation_losses' + str(epoch) + '.png')
 
     doPCA = latent_dim > 2
     z = encoder.predict(xvalidate)
