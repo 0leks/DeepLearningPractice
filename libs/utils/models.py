@@ -82,24 +82,56 @@ def buildConvDecoder(input_shape, layer_filters, layer_sizes, latent_dim):
     return tf.keras.Model(img, encoded)
 
 
-def buildDiscriminator(layer_sizes, latent_dim):
-    latent_shape = (latent_dim,)
+def buildDiscriminator(layer_sizes, input_shape):
     model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Flatten(input_shape=latent_shape))
+    model.add(tf.keras.layers.Flatten(input_shape=input_shape))
     for layer in layer_sizes:
         model.add(tf.keras.layers.Dense(layer, activation='relu'))
     model.add(tf.keras.layers.Dense(1, activation='sigmoid'))
     model.summary()
 
-    latent = tf.keras.Input(shape=latent_shape)
+    latent = tf.keras.Input(shape=input_shape)
     validity = model(latent)
 
     return tf.keras.Model(latent, validity)
 
+def makeVAE_GAN(input_shape, layer_sizes, latent_dim, optimizer, reconstructor_loss, discriminator_loss, use_conv):
+    discriminator = buildDiscriminator(layer_sizes, input_shape)
+    discriminator.compile(loss=discriminator_loss, optimizer=optimizer, metrics=['accuracy'])
+    if use_conv:
+        m = 2
+        encoder = buildConvEncoder(input_shape, [4*m, 8*m, 16*m, 32*m, 64*m], latent_dim)
+        decoder = buildConvDecoder(input_shape, [64*m, 32*m, 16*m, 8*m, 4*m], [(2, 2), (4, 4), (7, 7), (14, 14), (28, 28)], latent_dim)
+    else:
+        encoder = buildEncoder(input_shape, layer_sizes, latent_dim)
+        decoder = buildDecoder(input_shape, layer_sizes, latent_dim)
 
-def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, loss_function, use_conv):
-    discriminator = buildDiscriminator(layer_sizes, latent_dim)
-    discriminator.compile(loss=loss_function, optimizer=optimizer, metrics=['accuracy'])
+    # the loss for the encoder and decoder is just a placeholder. We never actually use it
+    encoder.compile(loss=reconstructor_loss, optimizer=optimizer)
+    decoder.compile(loss=reconstructor_loss, optimizer=optimizer)
+
+    x = tf.keras.Input(shape=input_shape)
+    latent = encoder(x)
+    x_hat = decoder(latent)
+
+    reconstructor = tf.keras.Model(x, x_hat)
+    reconstructor.summary()
+    reconstructor.compile(loss=reconstructor_loss, optimizer=optimizer)
+
+    discriminator.trainable = False
+    valid = discriminator(x_hat)
+
+    combined = tf.keras.Model(x, valid)
+    combined.summary()
+    combined.compile(loss=discriminator_loss, optimizer=optimizer)
+
+    return encoder, decoder, discriminator, reconstructor, combined
+
+
+def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, reconstructor_loss, discriminator_loss, use_conv):
+    latent_shape = (latent_dim,)
+    discriminator = buildDiscriminator(layer_sizes, latent_shape)
+    discriminator.compile(loss=discriminator_loss, optimizer=optimizer, metrics=['accuracy'])
 
     # x
     # 28x28x1 
@@ -126,8 +158,9 @@ def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 
         encoder = buildEncoder(input_shape, layer_sizes, latent_dim)
         decoder = buildDecoder(input_shape, layer_sizes, latent_dim)
 
-    encoder.compile(loss=loss_function, optimizer=optimizer)
-    decoder.compile(loss=loss_function, optimizer=optimizer)
+    # the loss for the encoder and decoder is just a placeholder. We never actually use it
+    encoder.compile(loss=reconstructor_loss, optimizer=optimizer)
+    decoder.compile(loss=reconstructor_loss, optimizer=optimizer)
 
     x = tf.keras.Input(shape=input_shape)
     latent = encoder(x)
@@ -135,13 +168,13 @@ def makeAdversarialAutoEncoder(input_shape, layer_sizes, latent_dim, optimizer, 
 
     reconstructor = tf.keras.Model(x, x_hat)
     reconstructor.summary()
-    reconstructor.compile(loss=loss_function, optimizer=optimizer)
+    reconstructor.compile(loss=reconstructor_loss, optimizer=optimizer)
 
     discriminator.trainable = False
     valid = discriminator(latent)
 
     combined = tf.keras.Model(x, valid)
     combined.summary()
-    combined.compile(loss=loss_function, optimizer=optimizer)
+    combined.compile(loss=discriminator_loss, optimizer=optimizer)
 
     return encoder, decoder, discriminator, reconstructor, combined
